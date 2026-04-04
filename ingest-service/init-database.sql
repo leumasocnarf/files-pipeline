@@ -1,0 +1,1 @@
+CREATE DATABASE ingest_service;

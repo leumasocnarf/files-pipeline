@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./ingest-service/init-database.sql:/docker-entrypoint-initdb.d/ingest_service.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.8
+    container_name: kafka
+    env_file:
+      - ./kafka.env
+    ports:
+      - "${KAFKA_EXTERNAL_PORT}:9094"
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:${KAFKA_INTERNAL_PORT} > /dev/null 2>&1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  ingest-service:
+    build:
+      context: ./ingest-service
+    container_name: ingest-service
+    env_file:
+      - ./ingest-service/.env
+    ports:
+      - "${INGEST_SERVICE_PORT}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:${INGEST_SERVICE_PORT}/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s

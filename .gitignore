@@ -10,3 +10,6 @@ out/
 .AppleDouble
 .LSOverride
 
+# Environment Variables
+.env
+kafka.env
