@@ -9,6 +9,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./ingest-service/init-database.sql:/docker-entrypoint-initdb.d/ingest_service.sql
       - ./processing-service/init-database.sql:/docker-entrypoint-initdb.d/processing_service.sql
+      - ./report-service/init-database.sql:/docker-entrypoint-initdb.d/report_service.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       interval: 5s
@@ -57,9 +58,7 @@ services:
     ports:
       - "${PROCESSING_SERVICE_PORT}:8082"
     depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
+      ingest-service:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:${PROCESSING_SERVICE_PORT}/actuator/health || exit 1" ]
@@ -67,3 +66,18 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
+
+  report-service:
+    build:
+      context: ./report-service
+    container_name: report-service
+    env_file:
+      - ./report-service/.env
+    ports:
+      - "${REPORT_SERVICE_PORT}:8083"
+    depends_on:
+      processing-service:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
