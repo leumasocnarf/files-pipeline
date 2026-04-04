@@ -10,6 +10,10 @@ services:
       - ./ingest-service/init-database.sql:/docker-entrypoint-initdb.d/ingest_service.sql
       - ./processing-service/init-database.sql:/docker-entrypoint-initdb.d/processing_service.sql
       - ./report-service/init-database.sql:/docker-entrypoint-initdb.d/report_service.sql
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       interval: 5s
@@ -23,6 +27,12 @@ services:
       - ./kafka.env
     ports:
       - "${KAFKA_EXTERNAL_PORT}:9094"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx256m"
     healthcheck:
       test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:${KAFKA_INTERNAL_PORT} > /dev/null 2>&1" ]
       interval: 10s
@@ -35,8 +45,14 @@ services:
     container_name: ingest-service
     env_file:
       - ./ingest-service/.env
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
     ports:
       - "${INGEST_SERVICE_PORT}:8081"
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,8 +71,14 @@ services:
     container_name: processing-service
     env_file:
       - ./processing-service/.env
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
     ports:
       - "${PROCESSING_SERVICE_PORT}:8082"
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     depends_on:
       ingest-service:
         condition: service_healthy
@@ -73,8 +95,14 @@ services:
     container_name: report-service
     env_file:
       - ./report-service/.env
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
     ports:
       - "${REPORT_SERVICE_PORT}:8083"
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     depends_on:
       processing-service:
         condition: service_healthy
