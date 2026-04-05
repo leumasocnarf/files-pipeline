@@ -40,7 +40,7 @@ class FileValidationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["test.csv", "test.CSV", "test.json", "test.JSON"])
+        @ValueSource(strings = ["test.csv", "test.CSV", "test.json", "test.JSON", "test.xml", "test.XML"])
         fun `supported extensions are case insensitive`(filename: String) {
             val content = when {
                 filename.endsWith(".csv", ignoreCase = true) -> "$validCsvHeaders\n$validCsvRow"
@@ -49,7 +49,17 @@ class FileValidationTest {
                     ignoreCase = true
                 ) -> """[{"date":"2026-01-01","product":"A","region":"North","revenue":100,"quantity":10}]"""
 
-                else -> ""
+                else -> """
+                        <records>
+                            <record>
+                                <date>2026-01-01</date>
+                                <product>A</product>
+                                <region>North</region>
+                                <revenue>100</revenue>
+                                <quantity>10</quantity>
+                            </record>
+                        </records>
+                    """.trimIndent()
             }
             val result = validateFile(fileOf(content, filename))
 
@@ -176,6 +186,106 @@ class FileValidationTest {
 
             assertFalse(result.valid)
             assertEquals("Expected a JSON array of objects", result.errors.first())
+        }
+    }
+
+    @Nested
+    inner class XmlValidation {
+
+        private fun xmlFile(content: String) = fileOf(content, "test.xml")
+
+        @Test
+        fun `valid xml passes`() {
+            val xml = """
+                <records>
+                    <record>
+                        <date>2026-01-01</date>
+                        <product>A</product>
+                        <region>North</region>
+                        <revenue>100</revenue>
+                        <quantity>10</quantity>
+                    </record>
+                    <record>
+                        <date>2026-01-02</date>
+                        <product>B</product>
+                        <region>South</region>
+                        <revenue>200</revenue>
+                        <quantity>20</quantity>
+                    </record>
+                </records>
+            """.trimIndent()
+            val result = validateFile(xmlFile(xml))
+
+            assertTrue(result.valid)
+            assertEquals(2, result.rowCount)
+        }
+
+        @Test
+        fun `empty content fails`() {
+            val result = validateFile(xmlFile(""))
+
+            assertFalse(result.valid)
+            assertEquals("File is empty", result.errors.first())
+        }
+
+        @Test
+        fun `no record elements fails`() {
+            val result = validateFile(xmlFile("<root><item>data</item></root>"))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("No <record> elements"))
+        }
+
+        @Test
+        fun `missing fields reports record number`() {
+            val xml = """
+                <records>
+                    <record>
+                        <date>2026-01-01</date>
+                        <product>A</product>
+                        <region>North</region>
+                        <revenue>100</revenue>
+                        <quantity>10</quantity>
+                    </record>
+                    <record>
+                        <date>2026-01-02</date>
+                        <product>B</product>
+                    </record>
+                </records>
+            """.trimIndent()
+            val result = validateFile(xmlFile(xml))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("Record 2"))
+            assertTrue(result.errors.first().contains("missing fields"))
+        }
+
+        @Test
+        fun `invalid xml fails gracefully`() {
+            val result = validateFile(xmlFile("<broken><unclosed>"))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("Invalid XML"))
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [1, 3, 5])
+        fun `row count matches record elements`(numRecords: Int) {
+            val records = (1..numRecords).joinToString("\n") {
+                """
+                    <record>
+                        <date>2026-01-01</date>
+                        <product>A</product>
+                        <region>North</region>
+                        <revenue>100</revenue>
+                        <quantity>10</quantity>
+                    </record>
+                    """.trimIndent()
+            }
+            val result = validateFile(xmlFile("<records>$records</records>"))
+
+            assertTrue(result.valid)
+            assertEquals(numRecords, result.rowCount)
         }
     }
 }

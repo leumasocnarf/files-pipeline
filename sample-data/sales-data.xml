@@ -1,0 +1,360 @@
+<records>
+    <record>
+        <date>2026-01-15</date>
+        <product>Widget A</product>
+        <region>North</region>
+        <revenue>15000.50</revenue>
+        <quantity>120</quantity>
+    </record>
+    <record>
+        <date>2026-02-01</date>
+        <product>Widget B</product>
+        <region>South</region>
+        <revenue>8200.00</revenue>
+        <quantity>65</quantity>
+    </record>
+    <record>
+        <date>2026-03-01</date>
+        <product>Widget C</product>
+        <region>East</region>
+        <revenue>9100.00</revenue>
+        <quantity>72</quantity>
+    </record>
+
+    <record>
+        <date>2026-01-20</date>
+        <product>Widget C</product>
+        <region>West</region>
+        <revenue>5400.25</revenue>
+        <quantity>45</quantity>
+    </record>
+    <record>
+        <date>2026-01-25</date>
+        <product>Widget B</product>
+        <region>North</region>
+        <revenue>9100.00</revenue>
+        <quantity>70</quantity>
+    </record>
+    <record>
+        <date>2026-02-05</date>
+        <product>Widget A</product>
+        <region>South</region>
+        <revenue>13200.60</revenue>
+        <quantity>105</quantity>
+    </record>
+    <record>
+        <date>2026-02-10</date>
+        <product>Widget C</product>
+        <region>East</region>
+        <revenue></revenue>
+        <quantity>52</quantity>
+    </record>
+    <record>
+        <date>2026-02-15</date>
+        <product>Widget B</product>
+        <region>West</region>
+        <revenue>7800.00</revenue>
+        <quantity>60</quantity>
+    </record>
+    <record>
+        <date>2026-02-20</date>
+        <product>Widget A</product>
+        <region>North</region>
+        <revenue>14500.90</revenue>
+        <quantity>115</quantity>
+    </record>
+    <record>
+        <date>2026-02-25</date>
+        <product>Widget C</product>
+        <region>South</region>
+        <revenue>6200.40</revenue>
+        <quantity></quantity>
+    </record>
+
+    <record>
+        <date>2026-03-05</date>
+        <product>Widget B</product>
+        <region>East</region>
+        <revenue>8900.00</revenue>
+        <quantity>72</quantity>
+    </record>
+    <record>
+        <date>2026-03-10</date>
+        <product>Widget A</product>
+        <region>West</region>
+        <revenue>13450.80</revenue>
+        <quantity>102</quantity>
+    </record>
+    <record>
+        <date>2026-03-15</date>
+        <product>Widget C</product>
+        <region>North</region>
+        <revenue>7100.00</revenue>
+        <quantity>55</quantity>
+    </record>
+    <record>
+        <date>2026-03-20</date>
+        <product>Widget B</product>
+        <region>South</region>
+        <revenue>8600.00</revenue>
+        <quantity>68</quantity>
+    </record>
+    <record>
+        <date>2026-03-25</date>
+        <product>Widget A</product>
+        <region>East</region>
+        <revenue>12500.30</revenue>
+        <quantity>97</quantity>
+    </record>
+
+    <record>
+        <date>2026-04-01</date>
+        <product>Widget C</product>
+        <region>West</region>
+        <revenue>5800.20</revenue>
+        <quantity>47</quantity>
+    </record>
+    <record>
+        <date>2026-04-05</date>
+        <product>Widget B</product>
+        <region>North</region>
+        <revenue>9400.00</revenue>
+        <quantity>75</quantity>
+    </record>
+    <record>
+        <date>2026-04-10</date>
+        <product>Widget A</product>
+        <region>South</region>
+        <revenue>13800.75</revenue>
+        <quantity>108</quantity>
+    </record>
+    <record>
+        <date>2026-04-15</date>
+        <product>Widget C</product>
+        <region>East</region>
+        <revenue>6900.00</revenue>
+        <quantity>53</quantity>
+    </record>
+    <record>
+        <date>2026-04-20</date>
+        <product>Widget B</product>
+        <region>West</region>
+        <revenue>8000.00</revenue>
+        <quantity>62</quantity>
+    </record>
+    <record>
+        <date>2026-04-25</date>
+        <product>Widget A</product>
+        <region>North</region>
+        <revenue>14900.10</revenue>
+        <quantity>118</quantity>
+    </record>
+
+    <record>
+        <date>2026-05-01</date>
+        <product>Widget C</product>
+        <region>South</region>
+        <revenue>6300.00</revenue>
+        <quantity>49</quantity>
+    </record>
+    <record>
+        <date>2026-05-05</date>
+        <product>Widget B</product>
+        <region>East</region>
+        <revenue>9100.00</revenue>
+        <quantity>73</quantity>
+    </record>
+    <record>
+        <date>2026-05-10</date>
+        <product>Widget A</product>
+        <region>West</region>
+        <revenue>13600.40</revenue>
+        <quantity>104</quantity>
+    </record>
+    <record>
+        <date>2026-05-15</date>
+        <product>Widget C</product>
+        <region>North</region>
+        <revenue>7200.00</revenue>
+        <quantity>56</quantity>
+    </record>
+    <record>
+        <date>2026-05-20</date>
+        <product>Widget B</product>
+        <region>South</region>
+        <revenue>8700.00</revenue>
+        <quantity>69</quantity>
+    </record>
+    <record>
+        <date>2026-05-25</date>
+        <product>Widget A</product>
+        <region>East</region>
+        <revenue>12700.90</revenue>
+        <quantity>99</quantity>
+    </record>
+
+    <record>
+        <date>2026-06-01</date>
+        <product>Widget C</product>
+        <region>West</region>
+        <revenue>6000.00</revenue>
+        <quantity>48</quantity>
+    </record>
+    <record>
+        <date>2026-06-05</date>
+        <product>Widget B</product>
+        <region>North</region>
+        <revenue>9500.00</revenue>
+        <quantity>76</quantity>
+    </record>
+    <record>
+        <date>2026-06-10</date>
+        <product>Widget A</product>
+        <region>South</region>
+        <revenue>20000.00</revenue>
+        <quantity>110</quantity>
+    </record>
+    <record>
+        <date>2026-06-15</date>
+        <product>Widget C</product>
+        <region>East</region>
+        <revenue>7000.00</revenue>
+        <quantity>54</quantity>
+    </record>
+    <record>
+        <date>2026-06-20</date>
+        <product>Widget B</product>
+        <region>West</region>
+        <revenue>8100.00</revenue>
+        <quantity>63</quantity>
+    </record>
+    <record>
+        <date>2026-06-25</date>
+        <product>Widget A</product>
+        <region>North</region>
+        <revenue>15050.00</revenue>
+        <quantity>119</quantity>
+    </record>
+
+    <record>
+        <date>2026-07-01</date>
+        <product>Widget C</product>
+        <region>South</region>
+        <revenue>6400.00</revenue>
+        <quantity>50</quantity>
+    </record>
+    <record>
+        <date>2026-07-05</date>
+        <product>Widget B</product>
+        <region>East</region>
+        <revenue>9200.00</revenue>
+        <quantity>74</quantity>
+    </record>
+    <record>
+        <date>2026-07-10</date>
+        <product>Widget A</product>
+        <region>West</region>
+        <revenue>25000.00</revenue>
+        <quantity>106</quantity>
+    </record>
+    <record>
+        <date>2026-07-15</date>
+        <product>Widget C</product>
+        <region>North</region>
+        <revenue>7300.00</revenue>
+        <quantity>57</quantity>
+    </record>
+    <record>
+        <date>2026-07-20</date>
+        <product>Widget B</product>
+        <region>South</region>
+        <revenue>8800.00</revenue>
+        <quantity>70</quantity>
+    </record>
+    <record>
+        <date>2026-07-25</date>
+        <product>Widget A</product>
+        <region>East</region>
+        <revenue>12800.00</revenue>
+        <quantity>100</quantity>
+    </record>
+
+    <record>
+        <date>2026-08-01</date>
+        <product>Widget C</product>
+        <region>West</region>
+        <revenue>6100.00</revenue>
+        <quantity>49</quantity>
+    </record>
+    <record>
+        <date>2026-08-05</date>
+        <product>Widget B</product>
+        <region>North</region>
+        <revenue>9600.00</revenue>
+        <quantity>77</quantity>
+    </record>
+    <record>
+        <date>2026-08-10</date>
+        <product>Widget A</product>
+        <region>South</region>
+        <revenue>14100.00</revenue>
+        <quantity>111</quantity>
+    </record>
+    <record>
+        <date>2026-08-15</date>
+        <product>Widget C</product>
+        <region>East</region>
+        <revenue>7100.00</revenue>
+        <quantity>55</quantity>
+    </record>
+    <record>
+        <date>2026-08-20</date>
+        <product>Widget B</product>
+        <region>West</region>
+        <revenue>8200.00</revenue>
+        <quantity>64</quantity>
+    </record>
+    <record>
+        <date>2026-08-25</date>
+        <product>Widget A</product>
+        <region>North</region>
+        <revenue>15100.00</revenue>
+        <quantity>121</quantity>
+    </record>
+
+    <record>
+        <date>2026-09-01</date>
+        <product>Widget C</product>
+        <region>South</region>
+        <revenue>3000.00</revenue>
+        <quantity>51</quantity>
+    </record>
+    <record>
+        <date>2026-09-05</date>
+        <product>Widget B</product>
+        <region>East</region>
+        <revenue>9300.00</revenue>
+        <quantity>75</quantity>
+    </record>
+    <record>
+        <date>2026-09-10</date>
+        <product>Widget A</product>
+        <region>West</region>
+        <revenue></revenue>
+        <quantity>107</quantity>
+    </record>
+    <record>
+        <date>2026-09-15</date>
+        <product>Widget C</product>
+        <region>North</region>
+        <revenue>7400.00</revenue>
+        <quantity>58</quantity>
+    </record>
+    <record>
+        <date>2026-09-20</date>
+        <product>Widget B</product>
+        <region>South</region>
+        <revenue>8900.00</revenue>
+        <quantity>71</quantity>
+    </record>
+</records>
