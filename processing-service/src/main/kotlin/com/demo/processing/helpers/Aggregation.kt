@@ -45,10 +45,10 @@ fun aggregateData(parsed: ParseResult): Map<String, Any> {
 private fun percentage(part: Int, total: Double) =
     if (total == 0.0) 0.0 else (part / total * 10000).roundToInt() / 100.0
 
-private fun sumColumn(rows: List<CsvRow>, column: String): Double =
+private fun sumColumn(rows: List<ParsedRow>, column: String): Double =
     rows.sumOf { it.data[column]?.toDoubleOrNull() ?: 0.0 }
 
-private fun revenueBy(groups: Map<String, List<CsvRow>>): Map<String, Double> {
+private fun revenueBy(groups: Map<String, List<ParsedRow>>): Map<String, Double> {
     val result = mutableMapOf<String, Double>()
     for (entry in groups) {
         result[entry.key] = sumColumn(entry.value, "revenue")
@@ -57,7 +57,7 @@ private fun revenueBy(groups: Map<String, List<CsvRow>>): Map<String, Double> {
     return result
 }
 
-private fun distributionOf(groups: Map<String, List<CsvRow>>, total: Double): Map<String, Double> {
+private fun distributionOf(groups: Map<String, List<ParsedRow>>, total: Double): Map<String, Double> {
     val result = mutableMapOf<String, Double>()
 
     for (entry in groups) {
