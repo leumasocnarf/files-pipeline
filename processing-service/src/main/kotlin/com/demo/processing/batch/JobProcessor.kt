@@ -5,7 +5,7 @@ import com.demo.processing.events.FileProcessedEventProducer
 import com.demo.processing.events.FileProcessedPayload
 import com.demo.processing.gateways.IngestServiceGateway
 import com.demo.processing.helpers.aggregateData
-import com.demo.processing.helpers.parseCsv
+import com.demo.processing.helpers.parseFile
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
@@ -26,7 +26,7 @@ class JobProcessor(
     fun processJob(jobId: UUID, fileId: UUID, filename: String) {
 
         val fileBytes = ingestServiceGateway.getFileContent(fileId)
-        val parsed = parseCsv(fileBytes)
+        val parsed = parseFile(fileBytes, filename)
         val aggregation = aggregateData(parsed)
 
         jdbc.update(

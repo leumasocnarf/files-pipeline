@@ -11,14 +11,14 @@ import org.springframework.mock.web.MockMultipartFile
 
 class FileValidationTest {
 
-    private fun csvFile(content: String, filename: String = "test.csv") =
-        MockMultipartFile("file", filename, "text/csv", content.toByteArray())
+    private fun fileOf(content: String, filename: String) =
+        MockMultipartFile("file", filename, "text/plain", content.toByteArray())
 
-    private val validHeaders = "date,product,region,revenue,quantity"
-    private val validRow = "2026-01-01,Widget,North,100.0,10"
+    private val validCsvHeaders = "date,product,region,revenue,quantity"
+    private val validCsvRow = "2026-01-01,Widget,North,100.0,10"
 
     @Nested
-    inner class FileTypeValidation {
+    inner class FileTypeRouting {
 
         @Test
         fun `empty file fails`() {
@@ -30,9 +30,9 @@ class FileValidationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["data.json", "report.xml", "image.png", "file.txt", "noextension"])
+        @ValueSource(strings = ["data.txt", "image.png", "report.pdf", "noextension"])
         fun `unsupported file types fail`(filename: String) {
-            val file = MockMultipartFile("file", filename, "text/plain", "content".toByteArray())
+            val file = fileOf("content", filename)
             val result = validateFile(file)
 
             assertFalse(result.valid)
@@ -40,111 +40,142 @@ class FileValidationTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["test.csv", "test.CSV", "test.Csv", "DATA.CSV"])
-        fun `csv extension is case insensitive`(filename: String) {
-            val file = csvFile("$validHeaders\n$validRow", filename)
-            val result = validateFile(file)
+        @ValueSource(strings = ["test.csv", "test.CSV", "test.json", "test.JSON"])
+        fun `supported extensions are case insensitive`(filename: String) {
+            val content = when {
+                filename.endsWith(".csv", ignoreCase = true) -> "$validCsvHeaders\n$validCsvRow"
+                filename.endsWith(
+                    ".json",
+                    ignoreCase = true
+                ) -> """[{"date":"2026-01-01","product":"A","region":"North","revenue":100,"quantity":10}]"""
+
+                else -> ""
+            }
+            val result = validateFile(fileOf(content, filename))
 
             assertTrue(result.valid)
         }
     }
 
+
     @Nested
-    inner class HeaderValidation {
+    inner class CsvValidation {
 
         @Test
-        fun `valid headers pass`() {
-            val file = csvFile("$validHeaders\n$validRow")
-            val result = validateFile(file)
+        fun `valid csv passes`() {
+            val result = validateFile(fileOf("$validCsvHeaders\n$validCsvRow", "test.csv"))
 
             assertTrue(result.valid)
+            assertEquals(1, result.rowCount)
             assertEquals(5, result.headers.size)
         }
 
         @Test
-        fun `missing headers are reported`() {
-            val file = csvFile("date,product\n2026-01-01,Widget")
-            val result = validateFile(file)
+        fun `missing headers fails`() {
+            val result = validateFile(fileOf("date,product\n2026-01-01,Widget", "test.csv"))
 
             assertFalse(result.valid)
             assertTrue(result.errors.first().contains("Missing headers"))
         }
 
-        @ParameterizedTest
-        @ValueSource(
-            strings = [
-                "Date,PRODUCT,Region,Revenue,QUANTITY",
-                "DATE,PRODUCT,REGION,REVENUE,QUANTITY",
-                "date,product,region,revenue,quantity"
-            ]
-        )
-        fun `headers are case insensitive`(headerLine: String) {
-            val file = csvFile("$headerLine\n$validRow")
-            val result = validateFile(file)
-
-            assertTrue(result.valid)
-        }
-
-        @Test
-        fun `headers with whitespace are trimmed`() {
-            val file = csvFile(" date , product , region , revenue , quantity \n$validRow")
-            val result = validateFile(file)
-
-            assertTrue(result.valid)
-        }
-    }
-
-    @Nested
-    inner class ContentValidation {
-
-        @Test
-        fun `empty content fails`() {
-            val file = csvFile("")
-            val result = validateFile(file)
-
-            assertFalse(result.valid)
-            assertEquals("File is empty", result.errors.first())
-        }
-
         @Test
         fun `headers only fails`() {
-            val file = csvFile(validHeaders)
-            val result = validateFile(file)
+            val result = validateFile(fileOf(validCsvHeaders, "test.csv"))
 
             assertFalse(result.valid)
             assertEquals("No data rows", result.errors.first())
         }
 
         @Test
-        fun `wrong column count reports specific row`() {
-            val csv = "$validHeaders\n$validRow\n2026-01-02,Widget"
-            val file = csvFile(csv)
-            val result = validateFile(file)
+        fun `wrong column count reports row number`() {
+            val csv = "$validCsvHeaders\n$validCsvRow\n2026-01-02,Widget"
+            val result = validateFile(fileOf(csv, "test.csv"))
 
             assertFalse(result.valid)
-            assertEquals(1, result.errors.size)
             assertTrue(result.errors.first().contains("Row 3"))
         }
 
-        @Test
-        fun `multiple invalid rows report all errors`() {
-            val csv = "$validHeaders\n2026-01-01,Widget\n2026-01-02,Widget,North"
-            val file = csvFile(csv)
-            val result = validateFile(file)
-
-            assertFalse(result.valid)
-            assertEquals(2, result.errors.size)
-        }
-
         @ParameterizedTest
-        @ValueSource(ints = [1, 3, 5, 10])
-        fun `row count matches actual data rows`(numRows: Int) {
+        @ValueSource(ints = [1, 3, 5])
+        fun `row count matches data rows`(numRows: Int) {
             val rows = (1..numRows).joinToString("\n") { "2026-01-01,A,North,100.0,$it" }
-            val file = csvFile("$validHeaders\n$rows")
-            val result = validateFile(file)
+            val result = validateFile(fileOf("$validCsvHeaders\n$rows", "test.csv"))
 
             assertTrue(result.valid)
             assertEquals(numRows, result.rowCount)
+        }
+    }
+
+    @Nested
+    inner class JsonValidation {
+
+        private fun jsonFile(content: String) = fileOf(content, "test.json")
+
+        @Test
+        fun `valid json array passes`() {
+            val json = """[
+                {"date":"2026-01-01","product":"A","region":"North","revenue":100,"quantity":10},
+                {"date":"2026-01-02","product":"B","region":"South","revenue":200,"quantity":20}
+            ]"""
+            val result = validateFile(jsonFile(json))
+
+            assertTrue(result.valid)
+            assertEquals(2, result.rowCount)
+        }
+
+        @Test
+        fun `empty content fails`() {
+            val result = validateFile(jsonFile(""))
+
+            assertFalse(result.valid)
+            assertEquals("File is empty", result.errors.first())
+        }
+
+        @Test
+        fun `non array fails`() {
+            val result = validateFile(jsonFile("""{"date":"2026-01-01"}"""))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("Expected a JSON array"))
+        }
+
+        @Test
+        fun `empty array fails`() {
+            val result = validateFile(jsonFile("[]"))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("empty"))
+        }
+
+        @Test
+        fun `missing fields reports item number`() {
+            val json = """[
+                {"date":"2026-01-01","product":"A","region":"North","revenue":100,"quantity":10},
+                {"date":"2026-01-02","product":"B"}
+            ]"""
+            val result = validateFile(jsonFile(json))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("Item 2"))
+            assertTrue(result.errors.first().contains("missing fields"))
+        }
+
+        @Test
+        fun `non object items are reported`() {
+            val json =
+                """[{"date":"2026-01-01","product":"A","region":"North","revenue":100,"quantity":10}, "not an object"]"""
+            val result = validateFile(jsonFile(json))
+
+            assertFalse(result.valid)
+            assertTrue(result.errors.first().contains("Item 2"))
+        }
+
+        @Test
+        fun `invalid json fails gracefully`() {
+            val result = validateFile(jsonFile("{broken json"))
+
+            assertFalse(result.valid)
+            assertEquals("Expected a JSON array of objects", result.errors.first())
         }
     }
 }

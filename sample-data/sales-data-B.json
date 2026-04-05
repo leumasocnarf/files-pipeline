@@ -1,0 +1,23 @@
+[
+  {
+    "date": "2026-01-15",
+    "product": "Widget A",
+    "region": "South",
+    "revenue": 15000.50,
+    "quantity": 120
+  },
+  {
+    "date": "2026-02-01",
+    "product": "Widget B",
+    "region": "East",
+    "revenue": 8200.00,
+    "quantity": 65
+  },
+  {
+    "date": "2026-03-01",
+    "product": "Widget C",
+    "region": "West",
+    "revenue": 9100.00,
+    "quantity": 72
+  }
+]
