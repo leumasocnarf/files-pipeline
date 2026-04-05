@@ -1,0 +1,352 @@
+[
+  {
+    "date": "2026-01-15",
+    "product": "Widget A",
+    "region": "South",
+    "revenue": 15000.50,
+    "quantity": 120
+  },
+  {
+    "date": "2026-02-01",
+    "product": "Widget B",
+    "region": "East",
+    "revenue": 8200.00,
+    "quantity": 65
+  },
+  {
+    "date": "2026-03-01",
+    "product": "Widget C",
+    "region": "West",
+    "revenue": 9100.00,
+    "quantity": 72
+  },
+  {
+    "date": "2026-01-20",
+    "product": "Widget C",
+    "region": "North",
+    "revenue": 5400.25,
+    "quantity": 45
+  },
+  {
+    "date": "2026-01-25",
+    "product": "Widget B",
+    "region": "South",
+    "revenue": 9100.00,
+    "quantity": 70
+  },
+  {
+    "date": "2026-02-05",
+    "product": "Widget A",
+    "region": "East",
+    "revenue": 13200.60,
+    "quantity": 105
+  },
+  {
+    "date": "2026-02-10",
+    "product": "Widget C",
+    "region": "West",
+    "revenue": null,
+    "quantity": 52
+  },
+  {
+    "date": "2026-02-15",
+    "product": "Widget B",
+    "region": "North",
+    "revenue": 7800.00,
+    "quantity": 60
+  },
+  {
+    "date": "2026-02-20",
+    "product": "Widget A",
+    "region": "South",
+    "revenue": 14500.90,
+    "quantity": 115
+  },
+  {
+    "date": "2026-02-25",
+    "product": "Widget C",
+    "region": "East",
+    "revenue": 6200.40,
+    "quantity": null
+  },
+  {
+    "date": "2026-03-05",
+    "product": "Widget B",
+    "region": "West",
+    "revenue": 8900.00,
+    "quantity": 72
+  },
+  {
+    "date": "2026-03-10",
+    "product": "Widget A",
+    "region": "North",
+    "revenue": 13450.80,
+    "quantity": 102
+  },
+  {
+    "date": "2026-03-15",
+    "product": "Widget C",
+    "region": "South",
+    "revenue": 7100.00,
+    "quantity": 55
+  },
+  {
+    "date": "2026-03-20",
+    "product": "Widget B",
+    "region": "East",
+    "revenue": 8600.00,
+    "quantity": 68
+  },
+  {
+    "date": "2026-03-25",
+    "product": "Widget A",
+    "region": "West",
+    "revenue": 12500.30,
+    "quantity": 97
+  },
+  {
+    "date": "2026-04-01",
+    "product": "Widget C",
+    "region": "North",
+    "revenue": 5800.20,
+    "quantity": 47
+  },
+  {
+    "date": "2026-04-05",
+    "product": "Widget B",
+    "region": "South",
+    "revenue": 9400.00,
+    "quantity": 75
+  },
+  {
+    "date": "2026-04-10",
+    "product": "Widget A",
+    "region": "East",
+    "revenue": 13800.75,
+    "quantity": 108
+  },
+  {
+    "date": "2026-04-15",
+    "product": "Widget C",
+    "region": "West",
+    "revenue": 6900.00,
+    "quantity": 53
+  },
+  {
+    "date": "2026-04-20",
+    "product": "Widget B",
+    "region": "North",
+    "revenue": 8000.00,
+    "quantity": 62
+  },
+  {
+    "date": "2026-04-25",
+    "product": "Widget A",
+    "region": "South",
+    "revenue": 14900.10,
+    "quantity": 118
+  },
+  {
+    "date": "2026-05-01",
+    "product": "Widget C",
+    "region": "East",
+    "revenue": 6300.00,
+    "quantity": 49
+  },
+  {
+    "date": "2026-05-05",
+    "product": "Widget B",
+    "region": "West",
+    "revenue": 9100.00,
+    "quantity": 73
+  },
+  {
+    "date": "2026-05-10",
+    "product": "Widget A",
+    "region": "North",
+    "revenue": 13600.40,
+    "quantity": 104
+  },
+  {
+    "date": "2026-05-15",
+    "product": "Widget C",
+    "region": "South",
+    "revenue": 7200.00,
+    "quantity": 56
+  },
+  {
+    "date": "2026-05-20",
+    "product": "Widget B",
+    "region": "East",
+    "revenue": 8700.00,
+    "quantity": 69
+  },
+  {
+    "date": "2026-05-25",
+    "product": "Widget A",
+    "region": "West",
+    "revenue": 12700.90,
+    "quantity": 99
+  },
+  {
+    "date": "2026-06-01",
+    "product": "Widget C",
+    "region": "North",
+    "revenue": 6000.00,
+    "quantity": 48
+  },
+  {
+    "date": "2026-06-05",
+    "product": "Widget B",
+    "region": "South",
+    "revenue": 9500.00,
+    "quantity": 76
+  },
+  {
+    "date": "2026-06-10",
+    "product": "Widget A",
+    "region": "East",
+    "revenue": 20000.00,
+    "quantity": 110
+  },
+  {
+    "date": "2026-06-15",
+    "product": "Widget C",
+    "region": "West",
+    "revenue": 7000.00,
+    "quantity": 54
+  },
+  {
+    "date": "2026-06-20",
+    "product": "Widget B",
+    "region": "North",
+    "revenue": 8100.00,
+    "quantity": 63
+  },
+  {
+    "date": "2026-06-25",
+    "product": "Widget A",
+    "region": "South",
+    "revenue": 15050.00,
+    "quantity": 119
+  },
+  {
+    "date": "2026-07-01",
+    "product": "Widget C",
+    "region": "East",
+    "revenue": 6400.00,
+    "quantity": 50
+  },
+  {
+    "date": "2026-07-05",
+    "product": "Widget B",
+    "region": "West",
+    "revenue": 9200.00,
+    "quantity": 74
+  },
+  {
+    "date": "2026-07-10",
+    "product": "Widget A",
+    "region": "North",
+    "revenue": 25000.00,
+    "quantity": 106
+  },
+  {
+    "date": "2026-07-15",
+    "product": "Widget C",
+    "region": "South",
+    "revenue": 7300.00,
+    "quantity": 57
+  },
+  {
+    "date": "2026-07-20",
+    "product": "Widget B",
+    "region": "East",
+    "revenue": 8800.00,
+    "quantity": 70
+  },
+  {
+    "date": "2026-07-25",
+    "product": "Widget A",
+    "region": "West",
+    "revenue": 12800.00,
+    "quantity": 100
+  },
+  {
+    "date": "2026-08-01",
+    "product": "Widget C",
+    "region": "North",
+    "revenue": 6100.00,
+    "quantity": 49
+  },
+  {
+    "date": "2026-08-05",
+    "product": "Widget B",
+    "region": "South",
+    "revenue": 9600.00,
+    "quantity": 77
+  },
+  {
+    "date": "2026-08-10",
+    "product": "Widget A",
+    "region": "East",
+    "revenue": 14100.00,
+    "quantity": 111
+  },
+  {
+    "date": "2026-08-15",
+    "product": "Widget C",
+    "region": "West",
+    "revenue": 7100.00,
+    "quantity": 55
+  },
+  {
+    "date": "2026-08-20",
+    "product": "Widget B",
+    "region": "North",
+    "revenue": 8200.00,
+    "quantity": 64
+  },
+  {
+    "date": "2026-08-25",
+    "product": "Widget A",
+    "region": "South",
+    "revenue": 15100.00,
+    "quantity": 121
+  },
+  {
+    "date": "2026-09-01",
+    "product": "Widget C",
+    "region": "East",
+    "revenue": 3000.00,
+    "quantity": 51
+  },
+  {
+    "date": "2026-09-05",
+    "product": "Widget B",
+    "region": "West",
+    "revenue": 9300.00,
+    "quantity": 75
+  },
+  {
+    "date": "2026-09-10",
+    "product": "Widget A",
+    "region": "North",
+    "revenue": null,
+    "quantity": 107
+  },
+  {
+    "date": "2026-09-15",
+    "product": "Widget C",
+    "region": "South",
+    "revenue": 7400.00,
+    "quantity": 58
+  },
+  {
+    "date": "2026-09-20",
+    "product": "Widget B",
+    "region": "East",
+    "revenue": 8900.00,
+    "quantity": 71
+  }
+]

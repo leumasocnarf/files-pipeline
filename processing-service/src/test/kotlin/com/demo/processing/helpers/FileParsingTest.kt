@@ -29,6 +29,14 @@ class FileParsingTest {
         }
 
         @Test
+        fun `routes xml by extension`() {
+            val xml = "<records><record><date>2026-01-01</date><product>Widget</product></record></records>"
+            val result = parseFile(xml.toByteArray(), "data.xml")
+
+            assertEquals(1, result.totalRows)
+        }
+
+        @Test
         fun `unknown extension returns empty`() {
             val result = parseFile("content".toByteArray(), "data.txt")
 
@@ -131,6 +139,69 @@ class FileParsingTest {
             val result = parseJson(json.toByteArray())
 
             assertTrue(result.headers.containsAll(listOf("date", "product", "region")))
+        }
+    }
+
+    @Nested
+    inner class XmlParsing {
+
+        private fun wrap(vararg records: String): ByteArray {
+            val inner = records.joinToString("\n")
+            return "<records>$inner</records>".toByteArray()
+        }
+
+        private fun record(date: String, product: String, region: String, revenue: String, quantity: String) =
+            "<record><date>$date</date><product>$product</product><region>$region</region><revenue>$revenue</revenue><quantity>$quantity</quantity></record>"
+
+        @Test
+        fun `parses valid xml`() {
+            val result = parseXml(
+                wrap(
+                    record("2026-01-01", "A", "North", "100.0", "10"),
+                    record("2026-01-02", "B", "South", "200.0", "20")
+                )
+            )
+
+            assertEquals(2, result.totalRows)
+            assertEquals(2, result.validRows)
+        }
+
+        @ParameterizedTest
+        @CsvSource("product,Widget", "region,North", "revenue,100.0", "quantity,10")
+        fun `extracts fields correctly`(field: String, expected: String) {
+            val result = parseXml(wrap(record("2026-01-01", "Widget", "North", "100.0", "10")))
+
+            assertEquals(expected, result.rows.first().data[field])
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [1, 3, 5])
+        fun `row count matches records`(numRecords: Int) {
+            val records = (1..numRecords).map { record("2026-01-01", "A", "North", "100.0", "$it") }
+            val result = parseXml(wrap(*records.toTypedArray()))
+
+            assertEquals(numRecords, result.totalRows)
+        }
+
+        @Test
+        fun `empty input returns empty result`() {
+            val result = parseXml(ByteArray(0))
+
+            assertEquals(0, result.totalRows)
+        }
+
+        @Test
+        fun `no record elements returns empty`() {
+            val result = parseXml("<root><item>data</item></root>".toByteArray())
+
+            assertEquals(0, result.totalRows)
+        }
+
+        @Test
+        fun `collects field names as headers`() {
+            val result = parseXml(wrap(record("2026-01-01", "A", "North", "100.0", "10")))
+
+            assertTrue(result.headers.containsAll(listOf("date", "product", "region", "revenue", "quantity")))
         }
     }
 }
