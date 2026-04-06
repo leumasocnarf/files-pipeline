@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -39,7 +40,8 @@ class ReportController(
     private val fileSummaryRepository: FileSummaryRepository,
     private val objectMapper: ObjectMapper
 ) {
-
+    //TODO: fix java.lang.IllegalArgumentException: The HTTP header line [Authorization:Bearer]  does not conform to RFC 9112. The request has been rejected.
+    @PreAuthorize("hasRole('report:read')")
     @GetMapping
     fun listSummaries(
         @RequestParam(required = false) status: SummaryStatus?,
@@ -55,6 +57,7 @@ class ReportController(
         return ResponseEntity.ok(page.map { it.toResponse() })
     }
 
+    @PreAuthorize("hasRole('report:read')")
     @GetMapping("/files/{fileId}")
     fun getSummaryByFileId(@PathVariable fileId: UUID): ResponseEntity<SummaryResponse> {
 

@@ -1,4 +1,4 @@
-package com.demo.ingest.auth
+package com.demo.report.auth
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

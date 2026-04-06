@@ -20,6 +20,20 @@ spring:
       group-id: processing-service
       auto-offset-reset: earliest
 
+  security:
+    oauth2:
+      client:
+        registration:
+          processing-service:
+            client-id: processing-service
+            client-secret: ${PROCESSING_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: openid
+            provider: keycloak
+        provider:
+          keycloak:
+            token-uri: ${OAUTH2_TOKEN_URI}
+
 services:
   ingest:
     base-url: ${INGEST_BASE_URL}

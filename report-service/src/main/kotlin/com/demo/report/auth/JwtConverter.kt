@@ -1,4 +1,4 @@
-package com.demo.ingest.auth
+package com.demo.report.auth
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.convert.converter.Converter
@@ -19,7 +19,6 @@ class JwtConverter(
     @Value($$"${jwt.auth.converter.principal-attribute}")
     private val principalAttribute: String?
 ) : Converter<Jwt, AbstractAuthenticationToken> {
-
 
     private val jwtGrantedAuthoritiesConverter = JwtGrantedAuthoritiesConverter()
 
@@ -50,5 +49,6 @@ class JwtConverter(
         if (clientRoles != null) roles.addAll(clientRoles)
 
         return roles.map { SimpleGrantedAuthority("ROLE_$it") }.toSet()
+
     }
 }
