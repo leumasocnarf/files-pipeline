@@ -5,6 +5,7 @@ import com.demo.ingest.services.FileUploadService
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -28,6 +29,7 @@ class IngestController(
     private val uploadService: FileUploadService,
 ) {
 
+    @PreAuthorize("hasRole('ingest:write')")
     @PostMapping
     fun upload(@RequestParam("file") file: MultipartFile): ResponseEntity<UploadResponse> {
         val (fileUpload, validation) = uploadService.upload(file)
@@ -43,6 +45,7 @@ class IngestController(
         )
     }
 
+    @PreAuthorize("hasRole('ingest:read')")
     @GetMapping("/{id}/data")
     fun downloadFile(@PathVariable id: UUID): ResponseEntity<ByteArray> {
         val fileUpload = uploadService.getFile(id)

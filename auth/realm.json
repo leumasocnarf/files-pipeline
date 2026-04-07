@@ -1,0 +1,93 @@
+{
+  "realm": "microservices-realm",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "ingest-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "INGEST_CLIENT_SECRET",
+      "redirectUris": [],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "access.token.lifespan": "3600"
+      },
+      "defaultRoles": [
+        "ingest:write",
+        "ingest:read"
+      ]
+    },
+    {
+      "clientId": "processing-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "PROCESSING_CLIENT_SECRET",
+      "redirectUris": [],
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "access.token.lifespan": "3600"
+      },
+      "defaultRoles": [
+        "ingest:read"
+      ]
+    },
+    {
+      "clientId": "report-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "REPORT_CLIENT_SECRET",
+      "redirectUris": [],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "access.token.lifespan": "3600"
+      },
+      "defaultRoles": [
+        "report:read"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "ingest:read"
+      },
+      {
+        "name": "ingest:write"
+      },
+      {
+        "name": "report:read"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "test-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ingest:read",
+        "ingest:write",
+        "report:read"
+      ]
+    }
+  ]
+}
