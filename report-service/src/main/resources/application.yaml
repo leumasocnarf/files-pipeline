@@ -21,6 +21,10 @@ spring:
       group-id: report-service
       auto-offset-reset: earliest
 
+  mvc:
+    problemdetails:
+      enabled: true
+
   security:
     oauth2:
       resourceserver:
