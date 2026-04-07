@@ -2,7 +2,9 @@ ARG JAVA_VERSION=25
 
 FROM eclipse-temurin:$JAVA_VERSION-jre-alpine
 
-RUN addgroup -S spring && adduser -S spring -G spring
+# For development only. To make curl requests inside docker network
+RUN addgroup -S spring && adduser -S spring -G spring \
+    && apk add --no-cache curl bash jq
 
 WORKDIR /app
 COPY build/libs/*.jar app.jar
