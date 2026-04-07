@@ -40,7 +40,7 @@ class ReportController(
     private val fileSummaryRepository: FileSummaryRepository,
     private val objectMapper: ObjectMapper
 ) {
-    //TODO: fix java.lang.IllegalArgumentException: The HTTP header line [Authorization:Bearer]  does not conform to RFC 9112. The request has been rejected.
+
     @PreAuthorize("hasRole('report:read')")
     @GetMapping
     fun listSummaries(
