@@ -1,0 +1,52 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  application:
+    name: processing-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  sql:
+    init:
+      mode: always
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: processing-service
+      auto-offset-reset: earliest
+
+  security:
+    oauth2:
+      client:
+        registration:
+          processing-service:
+            client-id: processing-service
+            client-secret: ${PROCESSING_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: openid
+            provider: keycloak
+        provider:
+          keycloak:
+            token-uri: ${OAUTH2_TOKEN_URI}
+
+services:
+  ingest:
+    base-url: ${INGEST_BASE_URL}
+
+processing:
+  batch:
+    interval-ms: 30000
+    max-size: 50
+
+logging:
+  level:
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
+    org.springframework.jdbc: WARN
+    org.hibernate: WARN
+    com.demo.processingservice: INFO

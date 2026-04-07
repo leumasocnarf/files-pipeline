@@ -1,0 +1,46 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  application:
+    name: report-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: report-service
+      auto-offset-reset: earliest
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI}
+          jwk-set-uri: ${JWT_JWK_SET_URI}
+
+jwt:
+  auth:
+    converter:
+      resource-id: ${JWT_RESOURCE_ID}
+      principal-attribute: ${JWT_PRINCIPAL_ATTRIBUTE}
+
+logging:
+  level:
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
+    org.hibernate: WARN
+    com.demo.report: INFO
