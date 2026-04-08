@@ -6,15 +6,15 @@ Files are ingested, validated, queued, and processed in scheduled batches across
 ## Table of Contents
 
 - [Features](#features)
+- [Prerequisites](#prerequisites)
 - [Tech Stack](#tech-stack)
 - [Architecture Decisions](#architecture-decisions)
 - [Architecture Diagram](#architecture-diagram)
 - [Access Points](#access-points)
-- [Prerequisites](#prerequisites)
+- [Authentication](#authentication)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
 - [Running Tests](#running-tests)
-
 
 ## Features
 
@@ -30,8 +30,13 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   enter the pipeline
 - **JPA + JdbcTemplate hybrid** — JPA for CRUD-heavy services, raw JDBC for the batch processor where explicit SQL
   control matters
+- **JWT authentication** — Keycloak-issued tokens with role-based access control per endpoint
 - **Docker Compose orchestration** — sequential startup with health checks, memory limits, and JVM tuning
 
+## Prerequisites
+
+- Java 25 (or compatible JDK)
+- Docker and Docker Compose
 
 ## Tech Stack
 
@@ -44,11 +49,11 @@ Files are ingested, validated, queued, and processed in scheduled batches across
 | Database         | PostgreSQL 18                  |
 | ORM              | JPA/Hibernate (ingest, report) |
 | Data Access      | JdbcTemplate (processing)      |
+| Auth             | Keycloak (OpenID Connect)      |
 | API Gateway      | Nginx                          |
 | Containerization | Docker Compose                 |
 | Monitoring       | Spring Actuator                |
 | Testing          | JUnit 5, Spring Test           |
-
 
 ## Architecture Decisions
 
@@ -62,7 +67,6 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   timed batch processing pattern used in ETL pipelines and data ingestion systems.
 - **Nginx gateway** — a single entry point hides internal service topology. In production, this would be replaced by a
   cloud load balancer or Kubernetes ingress.
-
 
 ## Architecture Diagram
 
@@ -97,7 +101,6 @@ Files are ingested, validated, queued, and processed in scheduled batches across
                     └─────────────┘
 ```
 
-
 ### Flow
 
 1. **Ingest Service** receives files via REST (CSV, JSON, XML), validates structure, stores the file in PostgreSQL, and
@@ -118,11 +121,34 @@ Files are ingested, validated, queued, and processed in scheduled batches across
 | Reports endpoint | http://localhost/api/v1/reports |
 
 
-## Prerequisites
+## Authentication
 
-- Java 25 (or compatible JDK)
-- Docker and Docker Compose
+The pipeline uses Keycloak for JWT-based authentication with role-based access control.
 
+### Realm: `microservices-realm`
+
+| Client               | Roles                      | Purpose                          |
+|----------------------|----------------------------|----------------------------------|
+| ingest-service       | `ingest:write`, `ingest:read` | Upload and retrieve files     |
+| processing-service   | `ingest:read`              | Fetch files for batch processing |
+| report-service       | `report:read`              | Query processed reports          |
+
+### Getting a token
+
+```bash
+curl -X POST http://keycloak:8080/realms/microservices-realm/protocol/openid-connect/token \
+  -d "client_id=ingest-service" \
+  -d "client_secret=YOUR_SECRET" \
+  -d "grant_type=client_credentials"
+```
+
+Then include it in requests:
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  -F "file=@data.csv" \
+  http://localhost/api/v1/uploads
+```
 
 ## Getting Started
 
@@ -149,7 +175,6 @@ chmod +x build-all.sh
 
 This builds each service locally and starts the full stack with Docker Compose.
 
-
 ## Usage
 
 ### Upload a file
@@ -164,7 +189,6 @@ curl -F "file=@data.json" http://localhost/api/v1/uploads
 # XML
 curl -F "file=@data.xml" http://localhost/api/v1/uploads
 ```
-
 
 ### Check reports
 
@@ -274,7 +298,6 @@ date,product,region,revenue,quantity
   "processedAt": "2026-04-02T15:07:11.865148Z"
 }
 ```
-
 
 ## Running Tests
 
