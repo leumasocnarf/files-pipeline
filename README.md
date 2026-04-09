@@ -67,38 +67,47 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   timed batch processing pattern used in ETL pipelines and data ingestion systems.
 - **Nginx gateway** — a single entry point hides internal service topology. In production, this would be replaced by a
   cloud load balancer or Kubernetes ingress.
+- **Keycloak for auth** — each microservice is a separate OAuth2 client with scoped roles. The ingest service requires
+  `ingest:write` for uploads and `ingest:read` for downloads, the processing service gets `ingest:read` to fetch files
+  for batch processing, and the report service uses `report:read`. Service-to-service calls use client credentials, not
+  shared secrets.
 
 ## Architecture Diagram
 
 ```
-                    ┌──────────────┐
-                    │   Client     │
-                    └──────┬───────┘
-                           │
-                    POST /api/v1/uploads
-                    GET  /api/v1/reports
-                           │
-                    ┌──────▼───────┐
-                    │  API Gateway │  (Nginx)
-                    │   port 80    │
-                    └──────┬───────┘
-                           │
-            ┌──────────────┼──────────────┐
-            │                             │
-    ┌───────▼──────┐              ┌───────▼──────┐
-    │    Ingest    │              │    Report    │
-    │   Service    │              │   Service    │
-    │  (port 8081) │              │  (port 8083) │
-    └───────┬──────┘              └───────▲──────┘
-            │                             │
-     file.uploaded                 file.processed
-      (Kafka topic)                 (Kafka topic)
-            │                             │
-            │       ┌─────────────┐       │
-            └──────►│  Processing │───────┘
-                    │   Service   │
-                    │  (port 8082)│
-                    └─────────────┘
+                          ┌──────────────┐
+                          │    Client    │
+                          └──────┬───────┘
+                                 │
+                        POST /api/v1/uploads
+                        GET  /api/v1/reports
+                        POST /realms/.../token
+                                 │
+                          ┌──────▼───────┐
+                          │  API Gateway │  (Nginx)
+                          │   port 80    │
+                          └──────┬───────┘
+                                 │
+          ┌──────────────────────┼─────────────────────┐
+          │                      │                     │
+  ┌───────▼──────┐       ┌───────▼──────┐       ┌──────▼───────┐
+  │    Ingest    │·······│   Keycloak   │·······│    Report    │
+  │   Service    │  JWT  │  port 8080   │  JWT  │   Service    │
+  │ (port 8081)  │       └──────┬───────┘       │ (port 8083)  │
+  └───────┬──────┘              ·               └──────▲───────┘
+          │                JWT validation              │
+          │                     ·                      │
+          │                     ·                      │
+   file.uploaded                ·               file.processed
+    (Kafka topic)               ·                (Kafka topic)
+          │                     ·                      │
+          │       ┌─────────────▼──────────────┐       │
+          └──────►│     Processing Service     │───────┘
+                  │        (port 8082)         │
+                  └────────────────────────────┘
+
+                 ─── Data flow    ··· JWT validation
+
 ```
 
 ### Flow
@@ -120,23 +129,22 @@ Files are ingested, validated, queued, and processed in scheduled batches across
 | Upload endpoint  | http://localhost/api/v1/uploads |
 | Reports endpoint | http://localhost/api/v1/reports |
 
-
 ## Authentication
 
 The pipeline uses Keycloak for JWT-based authentication with role-based access control.
 
 ### Realm: `microservices-realm`
 
-| Client               | Roles                      | Purpose                          |
-|----------------------|----------------------------|----------------------------------|
-| ingest-service       | `ingest:write`, `ingest:read` | Upload and retrieve files     |
-| processing-service   | `ingest:read`              | Fetch files for batch processing |
-| report-service       | `report:read`              | Query processed reports          |
+| Client             | Roles                         | Purpose                          |
+|--------------------|-------------------------------|----------------------------------|
+| ingest-service     | `ingest:write`, `ingest:read` | Upload and retrieve files        |
+| processing-service | `ingest:read`                 | Fetch files for batch processing |
+| report-service     | `report:read`                 | Query processed reports          |
 
 ### Getting a token
 
 ```bash
-curl -X POST http://keycloak:8080/realms/microservices-realm/protocol/openid-connect/token \
+curl -X POST http://auth.files-pipeline.local/realms/microservices-realm/protocol/openid-connect/token \
   -d "client_id=ingest-service" \
   -d "client_secret=YOUR_SECRET" \
   -d "grant_type=client_credentials"
@@ -174,6 +182,9 @@ chmod +x build-all.sh
 ```
 
 This builds each service locally and starts the full stack with Docker Compose.
+The build script will also add `auth.files-pipeline.local` to your `/etc/hosts` file
+(requires sudo on first run). This is used for consistent JWT issuer resolution
+between the host and Docker containers
 
 ## Usage
 
