@@ -16,9 +16,17 @@ spring:
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
     consumer:
       group-id: processing-service
       auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
 
   security:
     oauth2:

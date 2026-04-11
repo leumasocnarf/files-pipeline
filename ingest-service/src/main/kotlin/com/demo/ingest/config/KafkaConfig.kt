@@ -29,6 +29,9 @@ class KafkaConfig(private val kafkaProperties: KafkaProperties) {
             put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
             put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer::class.java)
             put(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS, false)
+            put(ProducerConfig.ACKS_CONFIG, "all")
+            put(ProducerConfig.RETRIES_CONFIG, 3)
+            put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true)
         }
         return DefaultKafkaProducerFactory(props)
     }
