@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
+import org.springframework.kafka.listener.ContainerProperties
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer
 
 @Configuration
@@ -32,6 +33,7 @@ class KafkaConfig(private val kafkaProperties: KafkaProperties) {
     ): ConcurrentKafkaListenerContainerFactory<String, FileProcessedEvent> {
         return ConcurrentKafkaListenerContainerFactory<String, FileProcessedEvent>().apply {
             setConsumerFactory(consumerFactory)
+            containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
         }
     }
 }
