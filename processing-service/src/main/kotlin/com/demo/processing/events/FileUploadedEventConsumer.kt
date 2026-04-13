@@ -8,21 +8,7 @@ import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
 import java.sql.Timestamp
 import java.time.Instant
-import java.util.UUID
-
-data class FileUploadedEvent(
-    val eventId: UUID = UUID.randomUUID(),
-    val eventType: String = "",
-    val timestamp: Instant = Instant.now(),
-    val payload: FileUploadedPayload = FileUploadedPayload()
-)
-
-data class FileUploadedPayload(
-    val fileId: UUID = UUID(0, 0),
-    val filename: String = "",
-    val contentType: String = "",
-    val fileSize: Long = 0
-)
+import java.util.*
 
 @Component
 class FileUploadedEventConsumer(

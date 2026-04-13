@@ -1,6 +1,7 @@
 package com.demo.ingest.config
 
 import com.demo.ingest.events.FileUploadedEvent
+import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
@@ -11,7 +12,6 @@ import org.springframework.kafka.config.TopicBuilder
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer
 
 @Configuration
 class KafkaConfig(private val kafkaProperties: KafkaProperties) {
@@ -27,11 +27,14 @@ class KafkaConfig(private val kafkaProperties: KafkaProperties) {
     fun producerFactory(): ProducerFactory<String, FileUploadedEvent> {
         val props = kafkaProperties.buildProducerProperties().apply {
             put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
-            put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer::class.java)
-            put(JacksonJsonSerializer.ADD_TYPE_INFO_HEADERS, false)
-            put(ProducerConfig.ACKS_CONFIG, "all")
-            put(ProducerConfig.RETRIES_CONFIG, 3)
-            put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true)
+            put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaJsonSchemaSerializer::class.java)
+            put("schema.registry.url", "http://schema-registry:8085")
+            put("auto.register.schemas", true)
+            put("json.fail.invalid.schema", true)
+            put("json.schema.spec.version", "draft_2020_12")
+            put("use.latest.version", true)
+            put("latest.compatibility.strict", false)
+            put("json.write.dates.iso8601", true)
         }
         return DefaultKafkaProducerFactory(props)
     }
