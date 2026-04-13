@@ -32,10 +32,9 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   control matters
 - **JWT authentication** — Keycloak-issued tokens with role-based access control per endpoint
 - **Docker Compose orchestration** — sequential startup with health checks, memory limits, and JVM tuning
-- **Schema Registry with BACKWARD compatibility** — Kafka messages are validated against pre-registered JSON schemas before
-  being produced. BACKWARD compatibility is configured at startup via the Schema Registry REST API, and
-  auto.register.schemas is disabled in production to prevent accidental schema drift. This allows producers and
-  consumers to evolve independently without breaking changes.
+- **Schema Registry with BACKWARD compatibility** — ensures Kafka messages are validated against a registered schema
+  before being produced, preventing malformed or unexpected data from reaching consumers. BACKWARD compatibility allows
+  consumers to be upgraded before producers safely, avoiding breaking changes during deployments
 
 ## Prerequisites
 
@@ -76,9 +75,8 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   `ingest:write` for uploads and `ingest:read` for downloads, the processing service gets `ingest:read` to fetch files
   for batch processing, and the report service uses `report:read`. Service-to-service calls use client credentials, not
   shared secrets.
-- **Explicit schema registration over auto-registration** — schemas are defined in versioned JSON schema files rather
-  than auto-generated from Kotlin data classes. This ensures constraints (field presence, value ranges, allowed enums)
-  are enforced at the producer against a deliberate schema definition, not just inferred from class structure.
+- **Schema auto-generated from Kotlin data classes** — schemas are derived directly from Kotlin data classes and
+  registered automatically on the first request, keeping schema definition and code in sync without manual maintenance.
 
 ## Architecture Diagram
 
