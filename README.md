@@ -32,10 +32,10 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   control matters
 - **JWT authentication** — Keycloak-issued tokens with role-based access control per endpoint
 - **Docker Compose orchestration** — sequential startup with health checks, memory limits, and JVM tuning
-- **Schema Registry with FULL compatibility** — Kafka messages are validated against pre-registered JSON schemas before
-  being produced. Schemas are registered explicitly at startup via the Schema Registry REST API, and
-  `auto.register.schemas` is disabled in production to prevent accidental schema drift. FULL compatibility mode ensures
-  both producers and consumers can evolve independently without breaking changes.
+- **Schema Registry with BACKWARD compatibility** — Kafka messages are validated against pre-registered JSON schemas before
+  being produced. BACKWARD compatibility is configured at startup via the Schema Registry REST API, and
+  auto.register.schemas is disabled in production to prevent accidental schema drift. This allows producers and
+  consumers to evolve independently without breaking changes.
 
 ## Prerequisites
 
@@ -76,10 +76,9 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   `ingest:write` for uploads and `ingest:read` for downloads, the processing service gets `ingest:read` to fetch files
   for batch processing, and the report service uses `report:read`. Service-to-service calls use client credentials, not
   shared secrets.
-- **Explicit schema registration over auto-registration** — schemas are pre-registered at startup from versioned JSON
-  schema files rather than auto-generated from Kotlin data classes. This ensures the constraints defined in the schema
-  (field presence, value ranges, allowed enums) are actually enforced at the producer, not just inferred from the class
-  structure.
+- **Explicit schema registration over auto-registration** — schemas are defined in versioned JSON schema files rather
+  than auto-generated from Kotlin data classes. This ensures constraints (field presence, value ranges, allowed enums)
+  are enforced at the producer against a deliberate schema definition, not just inferred from class structure.
 
 ## Architecture Diagram
 
