@@ -3,7 +3,9 @@ package com.demo.ingest.services
 import com.demo.ingest.domain.IngestedFile
 import com.demo.ingest.domain.IngestedFileStatus
 import com.demo.ingest.domain.IngestedFilesRepository
+import com.demo.ingest.events.FileUploadedEvent
 import com.demo.ingest.events.FileUploadedEventProducer
+import com.demo.ingest.events.FileUploadedPayload
 import com.demo.ingest.exceptions.CsvValidationException
 import com.demo.ingest.helpers.ValidationResult
 import com.demo.ingest.helpers.validateFile
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -40,7 +43,18 @@ class FileUploadService(
         )
 
         try {
-            fileUploadedEventProducer.publishEvent(ingestedFile)
+            val event = FileUploadedEvent(
+                eventId = UUID.randomUUID(),
+                eventType = "FILE_UPLOADED",
+                timestamp = Instant.now(),
+                payload = FileUploadedPayload(
+                    fileId = ingestedFile.id!!,
+                    filename = ingestedFile.filename,
+                    contentType = ingestedFile.contentType,
+                    fileSize = ingestedFile.fileSize
+                )
+            )
+            fileUploadedEventProducer.publishEvent(event)
             ingestedFilesRepository.updateStatus(ingestedFile.id!!, IngestedFileStatus.PUBLISHED)
 
         } catch (ex: Exception) {

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.demo"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 description = "ingest-service"
 
 java {
@@ -18,12 +18,14 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://packages.confluent.io/maven/") }
 }
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-kafka")
+    implementation("io.confluent:kafka-json-schema-serializer:8.1.0")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")

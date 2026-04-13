@@ -3,14 +3,18 @@ package com.demo.ingest.auth
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtDecoders
+import org.springframework.security.oauth2.jwt.JwtValidators
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.web.client.RestOperations
+import org.springframework.web.client.RestTemplate
 
 @Configuration
 @EnableWebSecurity
@@ -18,6 +22,8 @@ import org.springframework.security.web.SecurityFilterChain
 class SecurityFilterConfiguration(
     @Value($$"${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private val jwtIssuerUri: String,
+    @Value($$"${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private val jwkSetUri: String,
     private var jwtConverter: JwtConverter,
 ) {
 
@@ -27,8 +33,22 @@ class SecurityFilterConfiguration(
     }
 
     @Bean
-    fun jwtDecoder(): JwtDecoder {
-        return JwtDecoders.fromIssuerLocation(jwtIssuerUri)
+    fun jwtRestOperations(): RestOperations {
+        val factory = SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(10_000)
+            setReadTimeout(30_000)
+        }
+        return RestTemplate(factory)
+    }
+
+    @Bean
+    fun jwtDecoder(jwtRestOperations: RestOperations): JwtDecoder {
+        return NimbusJwtDecoder
+            .withJwkSetUri(jwkSetUri)
+            .restOperations(jwtRestOperations)
+            .build().apply {
+                setJwtValidator(JwtValidators.createDefaultWithIssuer(jwtIssuerUri))
+            }
     }
 
     @Bean

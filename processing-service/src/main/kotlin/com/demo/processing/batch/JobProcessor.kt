@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import tools.jackson.databind.ObjectMapper
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
@@ -18,7 +19,8 @@ import java.util.UUID
 class JobProcessor(
     private val jdbc: JdbcTemplate,
     private val ingestServiceGateway: IngestServiceGateway,
-    private val fileProcessedEventProducer: FileProcessedEventProducer
+    private val fileProcessedEventProducer: FileProcessedEventProducer,
+    private val objectMapper: ObjectMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -28,6 +30,7 @@ class JobProcessor(
         val fileBytes = ingestServiceGateway.getFileContent(fileId)
         val parsed = parseFile(fileBytes, filename)
         val aggregation = aggregateData(parsed)
+        val aggregationJson = objectMapper.writeValueAsString(aggregation)
 
         jdbc.update(
             "UPDATE processing_jobs SET status = 'COMPLETED', completed_at = ?, row_count = ?, valid_rows = ?, invalid_rows = ? WHERE id = ?",
@@ -36,6 +39,9 @@ class JobProcessor(
 
         fileProcessedEventProducer.publishEvent(
             FileProcessedEvent(
+                eventId = UUID.randomUUID(),
+                eventType = "FILE_PROCESSED",
+                timestamp = Instant.now(),
                 payload = FileProcessedPayload(
                     fileId = fileId,
                     jobId = jobId,
@@ -44,7 +50,7 @@ class JobProcessor(
                     totalRows = parsed.totalRows,
                     validRows = parsed.validRows,
                     invalidRows = parsed.invalidRows,
-                    summaryData = aggregation,
+                    summaryData = aggregationJson,
                     errorMessage = null,
                     processedAt = Instant.now()
                 )
@@ -63,6 +69,9 @@ class JobProcessor(
 
         fileProcessedEventProducer.publishEvent(
             FileProcessedEvent(
+                eventId = UUID.randomUUID(),
+                eventType = "FILE_PROCESSED",
+                timestamp = Instant.now(),
                 payload = FileProcessedPayload(
                     fileId = fileId,
                     jobId = jobId,

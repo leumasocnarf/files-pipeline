@@ -20,6 +20,9 @@ spring:
     consumer:
       group-id: report-service
       auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
 
   mvc:
     problemdetails:

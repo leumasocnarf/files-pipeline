@@ -14,4 +14,6 @@ interface FileSummaryRepository : JpaRepository<FileSummary, UUID> {
     fun findAllByStatus(status: SummaryStatus, pageable: Pageable): Page<FileSummary>
 
     fun findAllByOrderByProcessedAtDesc(pageable: Pageable): Page<FileSummary>
+
+    fun existsByFileId(fileId: UUID): Boolean
 }
