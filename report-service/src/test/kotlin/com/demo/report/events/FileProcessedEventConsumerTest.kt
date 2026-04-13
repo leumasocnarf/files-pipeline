@@ -28,9 +28,40 @@ class FileProcessedEventConsumerTest {
     @InjectMocks
     lateinit var consumer: FileProcessedEventConsumer
 
+    private fun validPayload(
+        fileId: UUID = UUID.randomUUID(),
+        jobId: UUID = UUID.randomUUID(),
+        filename: String = "test.csv",
+        status: String = "COMPLETED",
+        totalRows: Int = 0,
+        validRows: Int = 0,
+        invalidRows: Int = 0,
+        summaryData: String? = null,
+        errorMessage: String? = null,
+        processedAt: Instant = Instant.now()
+    ) = FileProcessedPayload(
+        fileId = fileId,
+        jobId = jobId,
+        filename = filename,
+        status = status,
+        totalRows = totalRows,
+        validRows = validRows,
+        invalidRows = invalidRows,
+        summaryData = summaryData,
+        errorMessage = errorMessage,
+        processedAt = processedAt
+    )
+
+    private fun validEvent(payload: FileProcessedPayload = validPayload()) = FileProcessedEvent(
+        eventId = UUID.randomUUID(),
+        eventType = "FILE_PROCESSED",
+        timestamp = Instant.now(),
+        payload = payload
+    )
+
     @Test
     fun `should not acknowledge on repository failure`() {
-        val event = FileProcessedEvent()
+        val event = validEvent()
 
         whenever(fileSummaryRepository.existsByFileId(any()))
             .thenThrow(RuntimeException("db error"))
@@ -42,14 +73,10 @@ class FileProcessedEventConsumerTest {
 
     @Test
     fun `should save summary and acknowledge on success`() {
-        val event = FileProcessedEvent(
-            payload = FileProcessedPayload(
-                status = "COMPLETED"
-            )
-        )
+        val event = validEvent(validPayload(status = "COMPLETED"))
 
         whenever(fileSummaryRepository.existsByFileId(any())).thenReturn(false)
-        whenever(fileSummaryRepository.save(any())).thenAnswer { it.arguments[0] }
+        whenever(fileSummaryRepository.save(any())).thenAnswer { invocation -> invocation.arguments[0] }
 
         consumer.handle(event, ack)
 
@@ -59,7 +86,7 @@ class FileProcessedEventConsumerTest {
 
     @Test
     fun `should acknowledge and skip on duplicate event`() {
-        val event = FileProcessedEvent()
+        val event = validEvent()
 
         whenever(fileSummaryRepository.existsByFileId(any())).thenReturn(true)
 
@@ -71,33 +98,20 @@ class FileProcessedEventConsumerTest {
 
     @Test
     fun `should serialize summaryData when present`() {
-        val summaryData = mapOf("key" to "value")
-        val event = FileProcessedEvent(
-            payload = FileProcessedPayload(
-                summaryData = summaryData,
-                status = "COMPLETED"
-            )
-        )
-        val serialized = """{"key":"value"}"""
+        val summaryData = """{"key":"value"}"""
+        val event = validEvent(validPayload(summaryData = summaryData))
 
         whenever(fileSummaryRepository.existsByFileId(any())).thenReturn(false)
-        whenever(objectMapper.writeValueAsString(summaryData)).thenReturn(serialized)
         whenever(fileSummaryRepository.save(any())).thenAnswer { invocation -> invocation.arguments[0] }
 
         consumer.handle(event, ack)
 
-        verify(objectMapper).writeValueAsString(summaryData)
-        verify(fileSummaryRepository).save(argThat { summary -> summary.summaryData == serialized })
+        verify(fileSummaryRepository).save(argThat { summary -> summary.summaryData == summaryData })
     }
 
     @Test
     fun `should not serialize summaryData when null`() {
-        val event = FileProcessedEvent(
-            payload = FileProcessedPayload(
-                summaryData = null,
-                status = "COMPLETED"
-            )
-        )
+        val event = validEvent(validPayload(summaryData = null))
 
         whenever(fileSummaryRepository.existsByFileId(any())).thenReturn(false)
         whenever(fileSummaryRepository.save(any())).thenAnswer { invocation -> invocation.arguments[0] }
@@ -113,8 +127,8 @@ class FileProcessedEventConsumerTest {
         val fileId = UUID.randomUUID()
         val jobId = UUID.randomUUID()
         val processedAt = Instant.now()
-        val event = FileProcessedEvent(
-            payload = FileProcessedPayload(
+        val event = validEvent(
+            validPayload(
                 fileId = fileId,
                 jobId = jobId,
                 filename = "test.csv",
@@ -128,7 +142,7 @@ class FileProcessedEventConsumerTest {
         )
 
         whenever(fileSummaryRepository.existsByFileId(any())).thenReturn(false)
-        whenever(fileSummaryRepository.save(any())).thenAnswer { it.arguments[0] }
+        whenever(fileSummaryRepository.save(any())).thenAnswer { invocation -> invocation.arguments[0] }
 
         consumer.handle(event, ack)
 
