@@ -1,7 +1,28 @@
+# ---------------------------------------------------------------------------
+# Common definitions
+# ---------------------------------------------------------------------------
+x-java-service: &java-service
+  restart: unless-stopped
+  environment:
+    JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+  deploy:
+    resources:
+      limits:
+        memory: 384M
+
+x-java-healthcheck: &java-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 10
+  start_period: 60s
+
+
 services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:18-alpine
-    container_name: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -22,7 +43,6 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:8.1.0
-    container_name: kafka
     env_file:
       - ./kafka.env
     ports:
@@ -61,77 +81,94 @@ services:
       timeout: 5s
       retries: 5
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.5.6
-    container_name: keycloak
-    environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HTTP_ENABLED: true
-      KC_HTTP_PORT: ${KC_HTTP_PORT}
-      KC_HOSTNAME_URL: ${KC_HOSTNAME_URL}
-      KC_HOSTNAME_ADMIN_URL: ${KC_HOSTNAME_ADMIN_URL}
-      KC_HTTP_RELATIVE_PATH: /
-      KC_HOSTNAME_STRICT_BACKCHANNEL: false
-      KC_LOG_LEVEL: DEBUG
-    command: start-dev --import-realm
+  #  keycloak:
+  #    image: quay.io/keycloak/keycloak:26.5.6
+  #    environment:
+  #      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+  #      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+  #      KC_HTTP_ENABLED: true
+  #      KC_HTTP_PORT: ${KC_HTTP_PORT}
+  #      KC_HOSTNAME_URL: ${KC_HOSTNAME_URL}
+  #      KC_HOSTNAME_ADMIN_URL: ${KC_HOSTNAME_ADMIN_URL}
+  #      KC_HTTP_RELATIVE_PATH: /
+  #      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+  #      KC_LOG_LEVEL: DEBUG
+  #    command: start-dev --import-realm
+  #    ports:
+  #      - "${KC_HTTP_PORT}:8080"
+  #    volumes:
+  #      - ./auth/realm.json:/opt/keycloak/data/import/realm.json:ro
+  #    deploy:
+  #      resources:
+  #        limits:
+  #          memory: 512M
+  #    depends_on:
+  #      kafka:
+  #        condition: service_healthy
+  #    healthcheck:
+  #      test: # source: https://stackoverflow.com/questions/75693830/keycloak-v21-docker-container-health-check-failing
+  #        [ "CMD-SHELL",
+  #          'exec 3<>/dev/tcp/keycloak/${KC_HTTP_PORT};
+  #          echo -e "GET /health/ready HTTP/1.1\n
+  #          host: keycloak:${KC_HTTP_PORT}\n" >&3;
+  #           timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP;
+  #            ERROR=$?;
+  #            exec 3<&-;
+  #            exec 3>&-;
+  #            exit $ERROR'
+  #        ]
+  #      interval: 30s
+  #      timeout: 10s
+  #      retries: 5
+  #      start_period: 60s
+
+  #  redis:
+  #    image: redis:7-alpine
+  #    container_name: redis
+  #    ports:
+  #      - "6379:6379"
+  #    deploy:
+  #      resources:
+  #        limits:
+  #          memory: 128M
+  #    healthcheck:
+  #      test: ["CMD", "redis-cli", "ping"]
+  #      interval: 5s
+  #      timeout: 5s
+  #      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Application services
+  # ---------------------------------------------------------------------------
+  gateway-service:
+    <<: *java-service
+    build:
+      context: ./gateway-service
+    container_name: gateway-service
+    env_file:
+      - ./gateway-service/.env
     ports:
-      - "${KC_HTTP_PORT}:8080"
-    volumes:
-      - ./auth/realm.json:/opt/keycloak/data/import/realm.json:ro
-    deploy:
-      resources:
-        limits:
-          memory: 512M
+      - "80:9000"
     depends_on:
       kafka:
         condition: service_healthy
-    healthcheck:
-      test: # source: https://stackoverflow.com/questions/75693830/keycloak-v21-docker-container-health-check-failing
-        [ "CMD-SHELL",
-          'exec 3<>/dev/tcp/keycloak/${KC_HTTP_PORT}; 
-          echo -e "GET /health/ready HTTP/1.1\n
-          host: keycloak:${KC_HTTP_PORT}\n" >&3;
-           timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP;
-            ERROR=$?; 
-            exec 3<&-; 
-            exec 3>&-; 
-            exit $ERROR'
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
-  api-gateway:
-    image: nginx:1.29-alpine-slim
-    container_name: api-gateway
-    volumes:
-      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "80:80"
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-    depends_on:
-      keycloak:
-        condition: service_healthy
+#      keycloak:
+#        condition: service_healthy
+    #      redis:
+    #        condition: service_healthy
+#    healthcheck:
+#      <<: *java-healthcheck
+#      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1" ]
 
   ingest-service:
+    <<: *java-service
     build:
       context: ./ingest-service
     container_name: ingest-service
     env_file:
       - ./ingest-service/.env
-    environment:
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
     ports:
       - "8081"
-    deploy:
-      resources:
-        limits:
-          memory: 384M
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,72 +176,53 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
-      api-gateway:
-        condition: service_started
+#      gateway-service:
+#        condition: service_healthy
     healthcheck:
+      <<: *java-healthcheck
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-    extra_hosts:
-      - "${AUTH_SERVICE_HOST}:host-gateway"
+  #    extra_hosts:
+  #      - "${AUTH_SERVICE_HOST}:host-gateway"
 
   processing-service:
+    <<: *java-service
     build:
       context: ./processing-service
     container_name: processing-service
     env_file:
       - ./processing-service/.env
-    environment:
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
     ports:
       - "8082"
-    deploy:
-      resources:
-        limits:
-          memory: 384M
     depends_on:
       ingest-service:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
     healthcheck:
+      <<: *java-healthcheck
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:8082/actuator/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-    extra_hosts:
-      - "${AUTH_SERVICE_HOST}:host-gateway"
+  #    extra_hosts:
+  #      - "${AUTH_SERVICE_HOST}:host-gateway"
 
   report-service:
+    <<: *java-service
     build:
       context: ./report-service
     container_name: report-service
     env_file:
       - ./report-service/.env
-    environment:
-      JAVA_OPTS: "-Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
     ports:
       - "8083"
-    deploy:
-      resources:
-        limits:
-          memory: 384M
     depends_on:
       processing-service:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
     healthcheck:
+      <<: *java-healthcheck
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:8083/actuator/health || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-    extra_hosts:
-      - "${AUTH_SERVICE_HOST}:host-gateway"
+#    extra_hosts:
+#      - "${AUTH_SERVICE_HOST}:host-gateway"
 
 volumes:
   postgres-data:
