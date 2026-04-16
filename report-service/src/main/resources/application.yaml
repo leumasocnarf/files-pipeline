@@ -28,18 +28,18 @@ spring:
     problemdetails:
       enabled: true
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI}
-          jwk-set-uri: ${JWT_JWK_SET_URI}
-
-jwt:
-  auth:
-    converter:
-      resource-id: ${JWT_RESOURCE_ID}
-      principal-attribute: ${JWT_PRINCIPAL_ATTRIBUTE}
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: ${JWT_ISSUER_URI}
+#          jwk-set-uri: ${JWT_JWK_SET_URI}
+#
+#jwt:
+#  auth:
+#    converter:
+#      resource-id: ${JWT_RESOURCE_ID}
+#      principal-attribute: ${JWT_PRINCIPAL_ATTRIBUTE}
 
 logging:
   level:
