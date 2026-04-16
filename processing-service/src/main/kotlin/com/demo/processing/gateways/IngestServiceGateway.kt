@@ -8,7 +8,7 @@ import java.util.*
 @Component
 class IngestServiceGateway(
     private val restClient: RestClient,
-    @Value("\${services.ingest.base-url}") private val baseUrl: String
+    @Value($$"${services.ingest.base-url}") private val baseUrl: String
 ) {
 
     fun getFileContent(fileId: UUID): ByteArray {
