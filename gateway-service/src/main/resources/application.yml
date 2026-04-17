@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: gateway-service
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8180/realms/microservices-realm
+
   cloud:
     gateway:
       server:
@@ -41,4 +48,5 @@ management:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    reactor.netty.http.client: DEBUG
+    org.springframework.security: DEBUG
+#    reactor.netty.http.client: DEBUG

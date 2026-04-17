@@ -81,6 +81,45 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.6
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_PORT: 8180
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: 8180
+    command: start-dev --import-realm
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./auth/realm.json:/opt/keycloak/data/import/realm.json:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL",
+        'exec 3<>/dev/tcp/keycloak/8180;
+                echo -e "GET /health/ready HTTP/1.1\n
+                host: keycloak:8180\n" >&3;
+                 timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP;
+                  ERROR=$?;
+                  exec 3<&-;
+                  exec 3>&-;
+                  exit $ERROR'
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   #  keycloak:
   #    image: quay.io/keycloak/keycloak:26.5.6
   #    environment:
@@ -152,13 +191,13 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-#      keycloak:
-#        condition: service_healthy
+      keycloak:
+        condition: service_healthy
     #      redis:
     #        condition: service_healthy
-#    healthcheck:
-#      <<: *java-healthcheck
-#      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1" ]
+  #    healthcheck:
+  #      <<: *java-healthcheck
+  #      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1" ]
 
   ingest-service:
     <<: *java-service
@@ -176,8 +215,8 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
-#      gateway-service:
-#        condition: service_healthy
+    #      gateway-service:
+    #        condition: service_healthy
     healthcheck:
       <<: *java-healthcheck
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health || exit 1" ]

@@ -28,6 +28,9 @@ dependencies {
     // Observability
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // Security
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
+
     // Redis
 //    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
