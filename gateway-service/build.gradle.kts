@@ -32,7 +32,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
 
     // Redis
-//    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
     // Kotlin
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
@@ -40,12 +40,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
     // Circuit Breaker
-//    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
-
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
-//    testImplementation("org.springframework.boot:spring-boot-starter-data-redis-reactive-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-redis-reactive-test")
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
