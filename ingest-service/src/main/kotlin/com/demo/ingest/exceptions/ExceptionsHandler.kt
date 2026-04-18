@@ -3,7 +3,6 @@ package com.demo.ingest.exceptions
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
-import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.multipart.MaxUploadSizeExceededException
@@ -50,10 +49,10 @@ class ExceptionsHandler {
         return problem
     }
 
-    @ExceptionHandler(AuthenticationException::class)
-    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
-        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
-        problem.title = "Authentication Error"
-        return problem
-    }
+//    @ExceptionHandler(AuthenticationException::class)
+//    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
+//        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
+//        problem.title = "Authentication Error"
+//        return problem
+//    }
 }

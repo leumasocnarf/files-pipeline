@@ -1,0 +1,97 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: gateway-service
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8180/realms/microservices-realm
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+
+          routes:
+            - id: ingest-service
+              uri: http://ingest-service:8081
+              predicates:
+                - Path=/api/v1/uploads/**
+                - Method=POST,GET
+              filters:
+                - PreserveHostHeader
+                - name: RequestSize
+                  args:
+                    maxSize: 10MB
+                - name: CircuitBreaker
+                  args:
+                    name: ingestCircuitBreaker
+                    fallbackUri: forward:/fallback/ingest
+
+            - id: report-service
+              uri: http://report-service:8083
+              predicates:
+                - Path=/api/v1/reports/**
+                - Method=GET
+              filters:
+                - PreserveHostHeader
+                - name: CircuitBreaker
+                  args:
+                    name: reportCircuitBreaker
+                    fallbackUri: forward:/fallback/report
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state:
+          seconds: 30
+        permitted-number-of-calls-in-half-open-state: 3
+        slow-call-duration-threshold:
+          seconds: 5
+        slow-call-rate-threshold: 80
+    instances:
+      ingestCircuitBreaker:
+        base-config: default
+      reportCircuitBreaker:
+        base-config: default
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration:
+          seconds: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      access: read-only
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG

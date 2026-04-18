@@ -38,9 +38,15 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${JWT_ISSUER_URI}
-          jwk-set-uri: ${JWT_JWK_SET_URI}
+          issuer-uri: http://keycloak:8180/realms/microservices-realm
 
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: ${JWT_ISSUER_URI}
+#          jwk-set-uri: ${JWT_JWK_SET_URI}
+#
 jwt:
   auth:
     converter:

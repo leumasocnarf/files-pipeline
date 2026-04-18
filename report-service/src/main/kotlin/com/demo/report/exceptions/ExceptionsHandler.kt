@@ -3,7 +3,6 @@ package com.demo.report.exceptions
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
-import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
@@ -18,13 +17,6 @@ class ExceptionsHandler {
     fun handleAccessDenied(ex: AccessDeniedException): ProblemDetail {
         val problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Insufficient permissions")
         problem.title = "Access Denied"
-        return problem
-    }
-
-    @ExceptionHandler(AuthenticationException::class)
-    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
-        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
-        problem.title = "Authentication Error"
         return problem
     }
 
@@ -46,4 +38,11 @@ class ExceptionsHandler {
         problem.title = "Server Error"
         return problem
     }
+
+//    @ExceptionHandler(AuthenticationException::class)
+//    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
+//        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
+//        problem.title = "Authentication Error"
+//        return problem
+//    }
 }

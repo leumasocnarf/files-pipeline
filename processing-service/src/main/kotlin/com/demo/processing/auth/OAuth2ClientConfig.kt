@@ -1,6 +1,5 @@
 package com.demo.processing.auth
 
-import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpRequest
@@ -9,12 +8,9 @@ import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.*
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-import org.springframework.web.client.RestTemplate
+import org.springframework.web.client.RestClient
 
 class OAuth2Interceptor(
     private val authorizedClientManager: OAuth2AuthorizedClientManager
@@ -56,7 +52,7 @@ class OAuth2ClientConfig(
             authorizedClientService
         )
         manager.setAuthorizedClientProvider(
-            org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder.builder()
+            OAuth2AuthorizedClientProviderBuilder.builder()
                 .clientCredentials()
                 .build()
         )
@@ -64,9 +60,10 @@ class OAuth2ClientConfig(
     }
 
     @Bean
-    fun restTemplate(authorizedClientManager: OAuth2AuthorizedClientManager): RestTemplate {
-        return RestTemplateBuilder()
-            .interceptors(OAuth2Interceptor(authorizedClientManager))
+    fun restClient(authorizedClientManager: OAuth2AuthorizedClientManager): RestClient {
+        val interceptor = OAuth2Interceptor(authorizedClientManager)
+        return RestClient.builder()
+            .requestInterceptor(interceptor)
             .build()
     }
 }

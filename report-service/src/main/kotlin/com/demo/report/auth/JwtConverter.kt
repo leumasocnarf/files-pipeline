@@ -20,6 +20,7 @@ class JwtConverter(
     private val principalAttribute: String?
 ) : Converter<Jwt, AbstractAuthenticationToken> {
 
+
     private val jwtGrantedAuthoritiesConverter = JwtGrantedAuthoritiesConverter()
 
     override fun convert(jwt: Jwt): AbstractAuthenticationToken {
@@ -49,6 +50,5 @@ class JwtConverter(
         if (clientRoles != null) roles.addAll(clientRoles)
 
         return roles.map { SimpleGrantedAuthority("ROLE_$it") }.toSet()
-
     }
 }

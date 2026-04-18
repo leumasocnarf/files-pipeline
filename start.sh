@@ -12,17 +12,8 @@ if ! grep -q "auth.files-pipeline.local" /etc/hosts; then
   exit 1
 fi
 
-echo "=== Building ingest-service ==="
-cd ingest-service && ./gradlew clean build -x test && cd ..
-
-echo "=== Building processing-service ==="
-cd processing-service && ./gradlew clean build -x test && cd ..
-
-echo "=== Building report-service ==="
-cd report-service && ./gradlew clean build -x test && cd ..
-
 echo "=== Starting infrastructure ==="
-docker compose up -d postgres kafka schema-registry keycloak api-gateway
+docker compose up -d postgres kafka schema-registry keycloak gateway-service
 
 echo "=== Waiting for Schema Registry ==="
 until curl -sf http://localhost:8085/config > /dev/null 2>&1; do

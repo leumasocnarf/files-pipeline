@@ -22,16 +22,29 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-kafka")
-    implementation("io.confluent:kafka-json-schema-serializer:8.1.0")
+    // Web
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+
+    // Security
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+
+    // Persistence
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    runtimeOnly("org.postgresql:postgresql")
+
+    // Messaging
+    implementation("org.springframework.boot:spring-boot-starter-kafka")
+    implementation("io.confluent:kafka-json-schema-serializer:8.1.0")
+
+    // Observability
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
-    runtimeOnly("org.postgresql:postgresql")
+
+    // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-kafka-test")

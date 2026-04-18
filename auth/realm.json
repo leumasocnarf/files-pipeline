@@ -3,6 +3,30 @@
   "enabled": true,
   "clients": [
     {
+      "clientId": "gateway-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "GATEWAY_CLIENT_SECRET",
+      "redirectUris": [
+        "http://localhost/login/oauth2/code/keycloak",
+        "http://localhost:9000/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost",
+        "http://localhost:9000"
+      ],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "access.token.lifespan": "3600",
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost/*##http://localhost:9000/*"
+      }
+    },
+    {
       "clientId": "ingest-service",
       "enabled": true,
       "protocol": "openid-connect",
