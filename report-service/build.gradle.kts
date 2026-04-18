@@ -26,8 +26,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
     // Security
-//    implementation("org.springframework.boot:spring-boot-starter-security")
-//    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
 
     // Persistence
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -48,8 +48,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-kafka-test")
-//    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-//    testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

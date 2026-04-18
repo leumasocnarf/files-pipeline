@@ -34,6 +34,12 @@ spring:
     problemdetails:
       enabled: true
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8180/realms/microservices-realm
+
 #  security:
 #    oauth2:
 #      resourceserver:
@@ -41,11 +47,11 @@ spring:
 #          issuer-uri: ${JWT_ISSUER_URI}
 #          jwk-set-uri: ${JWT_JWK_SET_URI}
 #
-#jwt:
-#  auth:
-#    converter:
-#      resource-id: ${JWT_RESOURCE_ID}
-#      principal-attribute: ${JWT_PRINCIPAL_ATTRIBUTE}
+jwt:
+  auth:
+    converter:
+      resource-id: ${JWT_RESOURCE_ID}
+      principal-attribute: ${JWT_PRINCIPAL_ATTRIBUTE}
 
 logging:
   level:
