@@ -41,6 +41,10 @@ spring:
           keycloak:
             token-uri: ${OAUTH2_TOKEN_URI}
 
+  mvc:
+    servlet:
+      load-on-startup: 1
+
 services:
   ingest:
     base-url: ${INGEST_BASE_URL}

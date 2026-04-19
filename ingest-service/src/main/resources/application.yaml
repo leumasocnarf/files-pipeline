@@ -31,6 +31,8 @@ spring:
         enable.idempotence: true
 
   mvc:
+    servlet:
+      load-on-startup: 1
     problemdetails:
       enabled: true
 
