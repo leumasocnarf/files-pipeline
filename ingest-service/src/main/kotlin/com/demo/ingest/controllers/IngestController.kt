@@ -3,6 +3,7 @@ package com.demo.ingest.controllers
 import com.demo.ingest.domain.IngestedFileStatus
 import com.demo.ingest.services.FileUploadService
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -29,7 +30,7 @@ class IngestController(
     fun upload(@RequestParam("file") file: MultipartFile): ResponseEntity<UploadResponse> {
         val (fileUpload, validation) = uploadService.upload(file)
 
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.CREATED).body(
             UploadResponse(
                 id = fileUpload.id!!,
                 filename = fileUpload.filename,
