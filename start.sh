@@ -69,4 +69,3 @@ kubectl wait --for=condition=ready pod --all --timeout=180s
 
 echo -e "\n${BOLD}${GREEN}══ All done! ══${RESET}\n"
 kubectl get pods
-echo -e "\n${DIM}Gateway available at:${RESET} http://localhost\n"
