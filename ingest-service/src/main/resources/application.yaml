@@ -40,18 +40,22 @@ spring:
         jwt:
           issuer-uri: http://keycloak:8180/realms/microservices-realm
 
-#  security:
-#    oauth2:
-#      resourceserver:
-#        jwt:
-#          issuer-uri: ${JWT_ISSUER_URI}
-#          jwk-set-uri: ${JWT_JWK_SET_URI}
-#
 jwt:
   auth:
     converter:
       resource-id: ${JWT_RESOURCE_ID}
       principal-attribute: ${JWT_PRINCIPAL_ATTRIBUTE}
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
 
 logging:
   level:
