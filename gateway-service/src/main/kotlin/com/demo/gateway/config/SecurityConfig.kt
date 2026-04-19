@@ -16,7 +16,6 @@ class SecurityConfig {
             .authorizeExchange { exchanges ->
                 exchanges
                     .pathMatchers("/actuator/**").permitAll()
-                    .pathMatchers("/fallback/**").permitAll()
                     .anyExchange().authenticated()
             }
             .oauth2ResourceServer { it.jwt { } }
