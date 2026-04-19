@@ -50,6 +50,17 @@ processing:
     interval-ms: 30000
     max-size: 50
 
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
 logging:
   level:
     org.apache.kafka: WARN

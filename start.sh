@@ -1,34 +1,72 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "=== Checking host configuration ==="
-if ! grep -q "auth.files-pipeline.local" /etc/hosts; then
-  echo ""
-  echo "⚠️  Please add the following entry to your /etc/hosts file:"
-  echo ""
-  echo "  127.0.0.1 auth.files-pipeline.local"
-  echo ""
-  echo "Run: echo '127.0.0.1 auth.files-pipeline.local' | sudo tee -a /etc/hosts"
-  exit 1
-fi
+CLUSTER_NAME="microservices"
+COMPOSE_NETWORK="files-pipeline_default"
+SERVICES=("gateway-service" "ingest-service" "processing-service" "report-service")
 
-echo "=== Starting infrastructure ==="
-docker compose up -d postgres kafka schema-registry keycloak gateway-service
+# ── Formatting helpers ────────────────────────────────────────────────────────
+CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'
+BOLD='\033[1m'; DIM='\033[2m'; RESET='\033[0m'
 
-echo "=== Waiting for Schema Registry ==="
-until curl -sf http://localhost:8085/config > /dev/null 2>&1; do
-  echo "Waiting for Schema Registry..."
+header() { echo -e "\n${BOLD}${CYAN}$1 ── ${RESET}$2"; }
+step()   { echo -e "  ${GREEN}=>${RESET} $1"; }
+info()   { echo -e "  ${DIM}$1${RESET}"; }
+done_()  { echo -e "  ${GREEN}✔${RESET} $1"; }
+warn()   { echo -e "  ${YELLOW}⚠${RESET}  $1"; }
+# ─────────────────────────────────────────────────────────────────────────────
+
+header "1/6" "Building Docker images"
+for svc in "${SERVICES[@]}"; do
+  step "Building $svc..."
+  docker build -t "files-pipeline-${svc}:latest" "./${svc}"
+done
+
+header "2/6" "Starting infrastructure"
+docker compose up -d postgres kafka schema-registry keycloak redis
+
+header "3/6" "Waiting for Schema Registry"
+until docker exec schema-registry curl -sf http://localhost:8085/ > /dev/null 2>&1; do
+  info "Schema Registry not ready yet, retrying in 2s..."
   sleep 2
 done
-echo "Schema Registry ready"
+done_ "Schema Registry ready"
 
-echo "=== Configuring Schema Registry ==="
-curl -s -X PUT http://localhost:8085/config \
+header "4/6" "Configuring Schema Registry"
+docker exec schema-registry curl -s -X PUT http://localhost:8085/config \
   -H "Content-Type: application/json" \
   -d '{"compatibility": "BACKWARD"}' > /dev/null
-echo "Schema Registry configured with BACKWARD compatibility"
+done_ "BACKWARD compatibility set"
 
-echo "=== Starting application services ==="
-docker compose up -d ingest-service processing-service report-service
+header "5/6" "Creating kind cluster"
+if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+  warn "Cluster '$CLUSTER_NAME' already exists, skipping creation."
+else
+  kind create cluster --name "$CLUSTER_NAME" --config kind-config.yaml
+fi
 
-echo "=== Done ==="
+step "Connecting kind to Docker Compose network..."
+if docker inspect "$CLUSTER_NAME-control-plane" \
+     --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' \
+   | grep -q "$COMPOSE_NETWORK"; then
+  warn "Already connected to $COMPOSE_NETWORK."
+else
+  docker network connect "$COMPOSE_NETWORK" "$CLUSTER_NAME-control-plane"
+  done_ "Connected to $COMPOSE_NETWORK"
+fi
+
+header "6/6" "Loading images and deploying to Kubernetes"
+for svc in "${SERVICES[@]}"; do
+  IMAGE="files-pipeline-${svc}:latest"
+  step "Loading $IMAGE into kind..."
+  kind load docker-image "$IMAGE" --name "$CLUSTER_NAME"
+done
+
+kubectl apply -f k8s/
+
+step "Waiting for pods to be ready..."
+kubectl wait --for=condition=ready pod --all --timeout=180s
+
+echo -e "\n${BOLD}${GREEN}══ All done! ══${RESET}\n"
+kubectl get pods
+echo -e "\n${DIM}Gateway available at:${RESET} http://localhost\n"
