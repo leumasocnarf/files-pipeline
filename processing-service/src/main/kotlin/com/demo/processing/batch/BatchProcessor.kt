@@ -17,7 +17,7 @@ class BatchProcessor(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(fixedDelayString = "\${processing.batch.interval-ms}")
+    @Scheduled(fixedDelayString = $$"${processing.batch.interval-ms}")
     fun processBatch() {
         val batch = claimQueuedJobs()
         if (batch.isEmpty()) return

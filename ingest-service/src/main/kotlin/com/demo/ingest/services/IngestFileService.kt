@@ -37,7 +37,7 @@ class IngestFileService(
         val ingestedFile = ingestedFilesRepository.save(
             IngestedFile(
                 filename = file.originalFilename ?: "unknown",
-                contentType = file.contentType ?: "application/octet-stream",
+                contentType = resolveContentType(file),
                 fileSize = file.size,
                 fileData = file.bytes,
             )
@@ -46,7 +46,7 @@ class IngestFileService(
         // TODO: Dual-write risk — DB save + Kafka publish are not atomic.
         //  Potential solution - Replace with outbox pattern: persist the event in the same transaction,
         //  let a poller/CDC relay it to Kafka.
-        log.info("Publishing event for file {}", ingestedFile.id)
+        log.info("File {} saved successfully", ingestedFile.id)
         fileUploadedEventProducer.publishEvent(ingestedFile.toUploadedEvent())
 
         return UploadResult(
@@ -59,4 +59,15 @@ class IngestFileService(
     fun getFile(id: UUID): IngestedFile =
         ingestedFilesRepository.findById(id)
             .orElseThrow { FileNotFoundException(id) }
+
+    private fun resolveContentType(file: MultipartFile): String {
+        val extensionType = when (file.originalFilename?.substringAfterLast('.', "")?.lowercase()) {
+            "csv" -> "text/csv"
+            "json" -> "application/json"
+            "xml" -> "application/xml"
+            else -> null
+        }
+
+        return extensionType ?: file.contentType ?: "application/octet-stream"
+    }
 }

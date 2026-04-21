@@ -1,15 +1,46 @@
 package com.demo.report.controllers
 
+import com.demo.report.domain.FileSummary
 import com.demo.report.domain.SummaryStatus
 import com.demo.report.services.ReportService
-import com.demo.report.services.SummaryResponse
-import com.demo.report.services.toResponse
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
+import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.ObjectMapper
+import java.time.Instant
 import java.util.*
+
+data class SummaryResponse(
+    val id: UUID,
+    val fileId: UUID,
+    val jobId: UUID?,
+    val filename: String,
+    val status: String,
+    val totalRows: Int,
+    val validRows: Int,
+    val invalidRows: Int,
+    val summaryData: Map<String, Any>?,
+    val errorMessage: String?,
+    val processedAt: Instant
+)
+
+fun FileSummary.toResponse(objectMapper: ObjectMapper) = SummaryResponse(
+    id = id,
+    fileId = fileId,
+    jobId = jobId,
+    filename = filename,
+    status = status.name,
+    totalRows = totalRows,
+    validRows = validRows,
+    invalidRows = invalidRows,
+    summaryData = summaryData?.let {
+        objectMapper.readValue(it, object : TypeReference<Map<String, Any>>() {})
+    },
+    errorMessage = errorMessage,
+    processedAt = processedAt,
+)
 
 @RestController
 @RequestMapping("/api/v1/reports")

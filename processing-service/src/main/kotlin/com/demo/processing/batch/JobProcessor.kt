@@ -83,10 +83,10 @@ class JobProcessor(
                 )
 
                 log.info(
-                    "Processed file {} — {} rows, revenue: {}",
+                    "Processed job {} for file {} — rows: {}",
+                    job.id,
                     job.fileId,
                     parsed.totalRows,
-                    aggregation["totalRevenue"]
                 )
             }
         }
