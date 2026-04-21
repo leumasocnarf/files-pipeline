@@ -22,11 +22,6 @@ class SaveFileSummaryUseCase(
         }
 
         fileSummaryRepository.save(payload.toFileSummary())
-
-        // TODO: If this service needs to emit its own events downstream,
-        //  persist them here (same transaction) and publish via outbox pattern
-        //  to guarantee exactly-once delivery without dual-write issues.
-        //  Potential solution - Replace with outbox pattern
     }
 }
 

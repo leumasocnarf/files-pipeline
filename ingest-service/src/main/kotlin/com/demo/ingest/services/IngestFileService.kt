@@ -34,6 +34,7 @@ class IngestFileService(
             is ValidationResult.Valid -> validation
         }
 
+        // First write
         val ingestedFile = ingestedFilesRepository.save(
             IngestedFile(
                 filename = file.originalFilename ?: "unknown",
@@ -43,10 +44,12 @@ class IngestFileService(
             )
         )
 
-        // TODO: Dual-write risk — DB save + Kafka publish are not atomic.
+        // TODO: Dual-write — DB save + Kafka publish are not atomic.
         //  Potential solution - Replace with outbox pattern: persist the event in the same transaction,
         //  let a poller/CDC relay it to Kafka.
         log.info("File {} saved successfully", ingestedFile.id)
+
+        // Second write
         fileUploadedEventProducer.publishEvent(ingestedFile.toUploadedEvent())
 
         return UploadResult(

@@ -17,6 +17,7 @@ class FileUploadedEventConsumer(
         log.info("Received file.uploaded event for file {}: {}", event.payload.fileId, event.payload.filename)
 
         try {
+            // Single write
             createProcessingJobUseCase.execute(event.payload)
             ack.acknowledge()
         } catch (e: Exception) {

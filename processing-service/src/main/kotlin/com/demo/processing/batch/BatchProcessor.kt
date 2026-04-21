@@ -30,7 +30,7 @@ class BatchProcessor(
             } catch (ex: Exception) {
                 log.error("Failed to process job {} for file {}", job.id, job.fileId, ex)
                 try {
-                    jobProcessor.completeJob(job, JobStatus.FAILED, errorMessage = ex.message)
+                    jobProcessor.finalizeJob(job, JobStatus.FAILED, errorMessage = ex.message)
                 } catch (e: Exception) {
                     log.error("Failed to mark job {} as failed", job.id, e)
                 }

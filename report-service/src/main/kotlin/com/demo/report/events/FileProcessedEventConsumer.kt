@@ -17,6 +17,7 @@ class FileProcessedEventConsumer(
         log.info("Received file.processed for file {} with status {}", event.payload.fileId, event.payload.status)
 
         try {
+            // Single write
             saveFileSummaryUseCase.execute(event.payload)
             ack.acknowledge()
         } catch (e: Exception) {

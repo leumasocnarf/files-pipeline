@@ -66,14 +66,14 @@ class JobProcessor(
         when (val parsed = parseFile(fileBytes, job.filename)) {
             is ParseResult.Empty -> {
                 log.warn("File {} yielded no parseable content — marking as failed", job.fileId)
-                completeJob(job, JobStatus.FAILED, errorMessage = "No parseable content")
+                finalizeJob(job, JobStatus.FAILED, errorMessage = "No parseable content")
             }
 
             is ParseResult.Success -> {
                 val aggregation = aggregateData(parsed)
                 val aggregationJson = objectMapper.writeValueAsString(aggregation)
 
-                completeJob(
+                finalizeJob(
                     job = job,
                     status = JobStatus.COMPLETED,
                     totalRows = parsed.totalRows,
@@ -101,7 +101,7 @@ class JobProcessor(
      * (e.g. from [BatchProcessor] on failure), it runs in its own transaction.
      */
     @Transactional
-    fun completeJob(
+    fun finalizeJob(
         job: QueuedJob,
         status: JobStatus,
         totalRows: Int = 0,
@@ -112,6 +112,7 @@ class JobProcessor(
     ) {
         val now = Instant.now()
 
+        // First write
         jdbc.update(
             """
             UPDATE processing_jobs
@@ -121,7 +122,11 @@ class JobProcessor(
             status.name, Timestamp.from(now), totalRows, validRows, invalidRows, errorMessage, job.id,
         )
 
-        // TODO: Dual-write risk — outbox pattern applies here
+        // TODO: Dual-write — DB save + Kafka publish are not atomic.
+        //  Potential solution - Replace with outbox pattern: persist the event in the same transaction,
+        //  let a poller/CDC relay it to Kafka.
+
+        // Second write
         fileProcessedEventProducer.publishEvent(
             job.toProcessedEvent(
                 status = status,
