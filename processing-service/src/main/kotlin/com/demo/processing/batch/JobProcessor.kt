@@ -92,6 +92,14 @@ class JobProcessor(
         }
     }
 
+    /**
+     * Finalizes a processing job by updating its status in the database and
+     * publishing a [FileProcessedEvent] to Kafka.
+     *
+     * When called internally from [processJob], this joins the existing transaction
+     * since Spring proxies do not intercept self-calls. When called externally
+     * (e.g. from [BatchProcessor] on failure), it runs in its own transaction.
+     */
     @Transactional
     fun completeJob(
         job: QueuedJob,
