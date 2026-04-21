@@ -64,4 +64,4 @@ for svc in "${SERVICES[@]}"; do
   kind load docker-image "$IMAGE" --name "$CLUSTER_NAME"
 done
 
-echo -e "\n${BOLD}${GREEN}══ Build complete! Run ./run/start.sh to deploy services ══${RESET}\n"
+echo -e "\n${BOLD}${GREEN}══ Build complete! Use./run start to deploy services ══${RESET}\n"

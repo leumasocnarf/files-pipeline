@@ -29,4 +29,4 @@ docker compose stop
 done_ "Infrastructure stopped"
 
 echo -e "\n${BOLD}${GREEN}══ All services stopped ══${RESET}"
-echo -e "${DIM}Data and cluster preserved. Run ./run/start.sh to bring everything back up.${RESET}\n"
+echo -e "${DIM}Data and cluster preserved. Use ./run start to bring everything back up.${RESET}\n"
