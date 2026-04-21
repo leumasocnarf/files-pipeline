@@ -1,7 +1,8 @@
 # files-pipeline
 
 An asynchronous file processing pipeline built with **Kotlin**, **Spring Boot 4**, **Apache Kafka**, and **PostgreSQL**.
-Files are ingested, validated, queued, and processed in scheduled batches across three independent microservices.
+Files are ingested, validated, queued, and processed in scheduled batches across four independent microservices,
+deployed on **Kubernetes (Kind)** with infrastructure services managed by **Docker Compose**.
 
 ## Table of Contents
 
@@ -24,40 +25,41 @@ Files are ingested, validated, queued, and processed in scheduled batches across
 - **Rich aggregation reports** — revenue totals, category breakdowns, percentage distributions, date range analysis
 - **Database per service** — each microservice owns its data independently
 - **Atomic job claiming** — `FOR UPDATE SKIP LOCKED` prevents duplicate processing across instances
-- **API gateway** — Nginx reverse proxy provides a single entry point
+- **Spring Cloud Gateway** — API gateway with rate limiting backed by Redis
 - **Problem Details (RFC 9457)** — standardized error responses across all endpoints
 - **File validation** — structural validation (headers, column count) at ingestion, rejects invalid files before they
   enter the pipeline
 - **JPA + JdbcTemplate hybrid** — JPA for CRUD-heavy services, raw JDBC for the batch processor where explicit SQL
   control matters
 - **JWT authentication** — Keycloak-issued tokens with role-based access control per endpoint
-- **Docker Compose orchestration** — sequential startup with health checks, memory limits, and JVM tuning
-- **Schema Registry with BACKWARD compatibility** — ensures Kafka messages are validated against a registered schema
-  before being produced, preventing malformed or unexpected data from reaching consumers. BACKWARD compatibility allows
-  consumers to be upgraded before producers safely, avoiding breaking changes during deployments
+- **Kubernetes deployment** — application services run on a Kind cluster, infrastructure services on Docker Compose
+- **Schema Registry with BACKWARD compatibility** — ensures Kafka messages are validated against a registered JSON
+  schema before being produced, preventing malformed or unexpected data from reaching consumers.
 
 ## Prerequisites
 
-- Java 25 (or compatible JDK)
+- Java 24+
 - Docker and Docker Compose
+- Kind
+- kubectl (Kubernetes CLI)
 
 ## Tech Stack
 
-| Layer            | Technology                     |
-|------------------|--------------------------------|
-| Language         | Kotlin 2.2                     |
-| Framework        | Spring Boot 4.0                |
-| Web              | Spring Web MVC                 |
-| Messaging        | Apache Kafka (Confluent)       |
-| Schema Registry  | Confluent Schema Registry      |
-| Database         | PostgreSQL 18                  |
-| ORM              | JPA/Hibernate (ingest, report) |
-| Data Access      | JdbcTemplate (processing)      |
-| Auth             | Keycloak (OpenID Connect)      |
-| API Gateway      | Nginx                          |
-| Containerization | Docker Compose                 |
-| Monitoring       | Spring Actuator                |
-| Testing          | JUnit 5, Spring Test           |
+| Layer           | Technology                         |
+|-----------------|------------------------------------|
+| Language        | Kotlin 2.2                         |
+| Framework       | Spring Boot 4.0                    |
+| Web             | Spring Web MVC                     |
+| API Gateway     | Spring Cloud Gateway + Redis       |
+| Messaging       | Apache Kafka (Confluent)           |
+| Schema Registry | Confluent Schema Registry          |
+| Database        | PostgreSQL 18                      |
+| ORM             | JPA/Hibernate (ingest, report)     |
+| Data Access     | JdbcTemplate (processing)          |
+| Auth            | Keycloak (OpenID Connect)          |
+| Orchestration   | Kubernetes (Kind) + Docker Compose |
+| Monitoring      | Spring Actuator                    |
+| Testing         | JUnit 5, Spring Test               |
 
 ## Architecture Decisions
 
@@ -69,51 +71,62 @@ Files are ingested, validated, queued, and processed in scheduled batches across
   conflicts in batch operations and to keep database interactions explicit.
 - **Scheduled batches over real-time processing** — files accumulate and are processed on a timer, demonstrating the
   timed batch processing pattern used in ETL pipelines and data ingestion systems.
-- **Nginx gateway** — a single entry point hides internal service topology. In production, this would be replaced by a
-  cloud load balancer or Kubernetes ingress.
+- **Spring Cloud Gateway over Nginx** — a Spring-based gateway provides a single entry point with rate limiting
+  (backed by Redis), replacing the previous Nginx reverse proxy. Being a Spring service, it fits naturally into the
+  microservices ecosystem and deploys alongside the other services on Kubernetes.
 - **Keycloak for auth** — each microservice is a separate OAuth2 client with scoped roles. The ingest service requires
   `ingest:write` for uploads and `ingest:read` for downloads, the processing service gets `ingest:read` to fetch files
   for batch processing, and the report service uses `report:read`. Service-to-service calls use client credentials, not
-  shared secrets.
+  shared secrets. Keycloak runs as an infrastructure service on Docker Compose and is accessed directly on port 8180 for
+  simplicity.
+- **Zero trust JWT validation** — rather than using token relay (where the gateway validates once and downstream
+  services trust it), every microservice independently validates JWTs against Keycloak using Spring Security OAuth2
+  Resource Server. The gateway does not hold a trusted position — each service is responsible for its own authentication
 - **Schema auto-generated from Kotlin data classes** — schemas are derived directly from Kotlin data classes and
   registered automatically on the first request, keeping schema definition and code in sync without manual maintenance.
+- **Kubernetes for application services, Docker Compose for infrastructure** — application microservices run on a Kind
+  cluster (1 replica each, for simplicity as a portfolio project), while stateful infrastructure (PostgreSQL, Kafka,
+  Schema Registry, Keycloak, Redis) stays on Docker Compose. The Kind cluster connects to the Compose network so
+  services can reach the infrastructure.
 
 ## Architecture Diagram
 
 ```
-                          ┌──────────────┐
-                          │    Client    │
-                          └──────┬───────┘
-                                 │
-                        POST /realms/.../token
-                        POST /api/v1/uploads
-                        GET  /api/v1/reports
-                                 │
-                          ┌──────▼───────┐
-                          │  API Gateway │  (Nginx)
-                          │   port 80    │
-                          └──────┬───────┘
-                                 │
-          ┌──────────────────────┼─────────────────────┐
-          │                      │                     │
-  ┌───────▼──────┐       ┌───────▼──────┐       ┌──────▼───────┐
-  │    Ingest    │·······│   Keycloak   │·······│    Report    │
-  │   Service    │  JWT  │  port 8080   │  JWT  │   Service    │
-  │ (port 8081)  │       └──────┬───────┘       │ (port 8083)  │
-  └───────┬──────┘              ·               └──────▲───────┘
-          │                JWT validation              │
-          │                     ·                      │
-          │                     ·                      │
-   file.uploaded                ·               file.processed
-    (Kafka topic)               ·                (Kafka topic)
-          │                     ·                      │
-          │       ┌─────────────▼──────────────┐       │
-          └──────►│     Processing Service     │───────┘
-                  │        (port 8082)         │
+                         ┌──────────────┐         POST /realms/.../token
+                         │    Client    │─────────────────────┐
+                         └──────┬───────┘             ┌───────▼──────┐
+                                │                     │   Keycloak   │
+                                │                     │  port 8180   │
+                                │                     └──────────────┘                       
+                                │                                                   
+                       POST /api/v1/uploads + JWT                                   
+                       GET  /api/v1/reports + JWT                                
+                                │                                                
+                    ┌───────────▼────────────┐
+                    │    Gateway Service     │
+                    │  (Spring Cloud Gateway)│
+                    │   port 80 — rate limit │
+                    └───────────┬────────────┘
+                                │
+          ┌─────────────────────┼────────────────────────┐
+          │                     ·                        │
+  ┌───────▼──────┐              ·                 ┌──────▼──────┐
+  │    Ingest    │································│    Report   │
+  │   Service    │  JWT         ·            JWT  │   Service   │
+  │              │              ·                 │             │
+  └───────┬──────┘              ·                 └──────▲──────┘
+          │                JWT validation                │
+          │                     ·                        │
+          │                     ·                        │
+   file.uploaded                ·                 file.processed
+    (Kafka topic)               ·                  (Kafka topic)
+          │                     ·                        │
+          │       ┌─────────────▼──────────────┐         │
+          └──────►│     Processing Service     │─────────┘
+                  │                            │
                   └────────────────────────────┘
 
                  ─── Data flow    ··· JWT validation
-
 ```
 
 ### Flow
@@ -138,6 +151,7 @@ Files are ingested, validated, queued, and processed in scheduled batches across
 ## Authentication
 
 The pipeline uses Keycloak for JWT-based authentication with role-based access control.
+Keycloak runs directly on Docker Compose and is accessible at `http://localhost:8180`.
 
 ### Realm: `microservices-realm`
 
@@ -150,7 +164,7 @@ The pipeline uses Keycloak for JWT-based authentication with role-based access c
 ### Getting a token
 
 ```bash
-curl -X POST http://auth.files-pipeline.local/realms/microservices-realm/protocol/openid-connect/token \
+curl -X POST http://localhost:8180/realms/microservices-realm/protocol/openid-connect/token \
   -d "client_id=ingest-service" \
   -d "client_secret=YOUR_SECRET" \
   -d "grant_type=client_credentials"
@@ -180,17 +194,33 @@ cp .env.example .env
 cp kafka.env.example kafka.env
 ```
 
-3. Build and start all services:
+3. Build images, start infrastructure, and create the Kind cluster:
 
 ```bash
-chmod +x start.sh
-./start.sh
+./run build
 ```
 
-This builds each service locally and starts the full stack with Docker Compose.
-The build script will also add `auth.files-pipeline.local` to your `/etc/hosts` file
-(requires sudo on first run). This is used for consistent JWT issuer resolution
-between the host and Docker containers
+This builds each service's Docker image, starts the infrastructure containers (PostgreSQL, Kafka, Schema Registry,
+Keycloak, Redis), configures Schema Registry with BACKWARD compatibility, creates a Kind cluster, connects it to the
+Docker Compose network, and loads the service images into the cluster.
+
+4. Deploy and start all services:
+
+```bash
+./run start
+```
+
+This deploys the four microservices to the Kind cluster in order (ingest → processing → report → gateway),
+waiting for each to become ready before proceeding.
+
+### Other commands
+
+| Command          | Description                                                                              |
+|------------------|------------------------------------------------------------------------------------------|
+| `./run build`    | Build images, start infrastructure, create Kind cluster                                  |
+| `./run start`    | Deploy services to Kubernetes and wait for readiness                                     |
+| `./run stop`     | Scale down Kubernetes deployments and stop infrastructure (preserves data)               |
+| `./run teardown` | Delete Kubernetes resources and cluster, stop Docker Compose (optionally remove volumes) |
 
 ## Usage
 
@@ -323,6 +353,5 @@ cd ingest-service && ./gradlew test && cd ..
 cd processing-service && ./gradlew test && cd ..
 cd report-service && ./gradlew test && cd ..
 ```
-
 
 
