@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+cmd=$1
+shift
+
+script="$(dirname "$0")/bin/$cmd.sh"
+
+if [[ -f "$script" ]]; then
+  exec "$script" "$@"
+else
+  echo "Unknown command: '$cmd'"
+  echo "Available: build | start | stop | teardown"
+  exit 1
+fi
