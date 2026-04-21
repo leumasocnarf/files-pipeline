@@ -17,48 +17,50 @@ class BatchProcessor(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Scheduled(fixedDelayString = $$"${processing.batch.interval-ms}")
+    @Scheduled(fixedDelayString = "\${processing.batch.interval-ms}")
     fun processBatch() {
+        val batch = claimQueuedJobs()
+        if (batch.isEmpty()) return
 
-        // Find oldest queued jobs, claim them by marking as processing (skip locked ones), and return them
-        val batch = jdbc.queryForList(
-            """
-        UPDATE processing_jobs 
-        SET status = 'PROCESSING', started_at = ?
-        WHERE id IN (
-            SELECT id FROM processing_jobs 
-            WHERE status = 'QUEUED' 
-            ORDER BY created_at ASC 
-            LIMIT ?
-            FOR UPDATE SKIP LOCKED
-        )
-        RETURNING id, file_id, filename
-        """,
-            Timestamp.from(Instant.now()), maxBatchSize
-        )
+        log.info("Processing batch of {} files", batch.size)
 
-        if (batch.isNotEmpty()) {
-            log.info("Processing batch of {} files", batch.size)
-
-            batch.forEach { row ->
-                val jobId = row["id"] as UUID
-                val fileId = row["file_id"] as UUID
-                val filename = row["filename"] as String
-
+        batch.forEach { job ->
+            try {
+                jobProcessor.processJob(job)
+            } catch (ex: Exception) {
+                log.error("Failed to process job {} for file {}", job.id, job.fileId, ex)
                 try {
-                    jobProcessor.processJob(jobId, fileId, filename)
-
-                } catch (ex: Exception) {
-                    log.error("Failed to process job {} for file {}: {}", jobId, fileId, ex.message)
-
-                    try {
-                        jobProcessor.failJob(jobId, fileId, filename, ex.message)
-
-                    } catch (e: Exception) {
-                        log.error("Failed to mark job {} as failed: {}", jobId, e.message)
-                    }
+                    jobProcessor.completeJob(job, JobStatus.FAILED, errorMessage = ex.message)
+                } catch (e: Exception) {
+                    log.error("Failed to mark job {} as failed", job.id, e)
                 }
             }
         }
     }
+
+    private fun claimQueuedJobs(): List<QueuedJob> =
+        jdbc.queryForList(
+            """
+            UPDATE processing_jobs
+            SET status = ?, started_at = ?
+            WHERE id IN (
+                SELECT id FROM processing_jobs
+                WHERE status = ?
+                ORDER BY created_at ASC
+                LIMIT ?
+                FOR UPDATE SKIP LOCKED
+            )
+            RETURNING id, file_id, filename
+            """.trimIndent(),
+            JobStatus.PROCESSING.name,
+            Timestamp.from(Instant.now()),
+            JobStatus.QUEUED.name,
+            maxBatchSize,
+        ).map { row ->
+            QueuedJob(
+                id = row["id"] as UUID,
+                fileId = row["file_id"] as UUID,
+                filename = row["filename"] as String,
+            )
+        }
 }

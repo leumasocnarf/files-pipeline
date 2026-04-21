@@ -3,6 +3,7 @@ package com.demo.report.exceptions
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
+import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
@@ -39,10 +40,18 @@ class ExceptionsHandler {
         return problem
     }
 
-//    @ExceptionHandler(AuthenticationException::class)
-//    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
-//        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
-//        problem.title = "Authentication Error"
-//        return problem
-//    }
+    @ExceptionHandler(SummaryNotFoundException::class)
+    fun handleNotFound(ex: SummaryNotFoundException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.message.orEmpty()).apply {
+            title = "Summary Not Found"
+            setProperty("fileId", ex.fileId)
+        }
+    }
+
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
+        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
+        problem.title = "Authentication Error"
+        return problem
+    }
 }

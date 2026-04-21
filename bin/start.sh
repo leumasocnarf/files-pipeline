@@ -32,7 +32,7 @@ wait_for_ready() {
 
 header "1/3" "Checking prerequisites"
 if ! kind get clusters 2>/dev/null | grep -q "^microservices$"; then
-  fail "Kind cluster 'microservices' not found. Run ./run/build.sh first."
+  fail "Kind cluster 'microservices' not found. Use ./run build first."
   exit 1
 fi
 

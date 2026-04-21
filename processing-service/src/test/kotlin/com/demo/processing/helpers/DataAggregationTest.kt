@@ -6,13 +6,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
+import kotlin.test.assertIs
 
-class AggregationTest {
+class DataAggregationTest {
 
     private fun parseAndAggregate(vararg rows: String): Map<String, Any> {
         val headers = "date,product,region,revenue,quantity"
         val csv = (listOf(headers) + rows.toList()).joinToString("\n")
-        return aggregateData(parseCsv(csv.toByteArray()))
+        val result = parseFile(csv.toByteArray(), "data.csv")
+        return aggregateData(assertIs(result))
     }
 
     @Nested

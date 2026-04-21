@@ -1,18 +1,14 @@
 package com.demo.processing.events
 
+import com.demo.processing.services.CreateProcessingJobUseCase
 import org.slf4j.LoggerFactory
-import org.springframework.dao.DuplicateKeyException
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
-import java.sql.Timestamp
-import java.time.Instant
-import java.util.*
 
 @Component
 class FileUploadedEventConsumer(
-    private val jdbc: JdbcTemplate
+    private val createProcessingJobUseCase: CreateProcessingJobUseCase,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -21,18 +17,12 @@ class FileUploadedEventConsumer(
         log.info("Received file.uploaded event for file {}: {}", event.payload.fileId, event.payload.filename)
 
         try {
-            jdbc.update(
-                "INSERT INTO processing_jobs (id, file_id, filename, status, created_at) VALUES (?, ?, ?, 'QUEUED', ?)",
-                UUID.randomUUID(), event.payload.fileId, event.payload.filename, Timestamp.from(Instant.now())
-            )
-            ack.acknowledge()
-            log.info("Inserted processing job for file {}", event.payload.fileId)
-
-        } catch (e: DuplicateKeyException) {
-            log.warn("Duplicate event for file {}, skipping", event.payload.fileId)
+            createProcessingJobUseCase.execute(event.payload)
             ack.acknowledge()
         } catch (e: Exception) {
-            log.error("Failed to process event for file {}: {}", event.payload.fileId, e.message)
+            log.error("Failed to process event for file {}", event.payload.fileId, e)
+            // Don't ack — let Kafka retry based on your consumer config,
+            // or explicitly send to a dead-letter topic here
         }
     }
 }
