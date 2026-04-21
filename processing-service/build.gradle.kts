@@ -50,6 +50,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-kafka-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-oauth2-client-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
