@@ -11,12 +11,14 @@ class FileUploadedEventProducer(
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun publishEvent(event: FileUploadedEvent) {
+        val fileId = event.payload.fileId
+
         kafkaTemplate.send("file.uploaded", event.payload.fileId.toString(), event)
             .whenComplete { _, ex ->
                 if (ex != null) {
-                    log.error("Failed to publish file.uploaded event for file {}: {}", event.payload.fileId, ex.message)
+                    log.error("Failed to publish file.uploaded event for file {}: {}", fileId, ex.message)
                 } else {
-                    log.info("Published file.uploaded event for file {}", event.payload.fileId)
+                    log.info("Published file.uploaded event for file {}", fileId)
                 }
             }
     }

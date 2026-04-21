@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingest-service-config
+data:
+  SERVER_PORT: "8081"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/ingest_service"
+  SPRING_DATASOURCE_USERNAME: "admin"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  JWT_RESOURCE_ID: "ingest-service"
+  JWT_PRINCIPAL_ATTRIBUTE: "preferred_username"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ingest-service-secret
+type: Opaque
+stringData:
+  SPRING_DATASOURCE_PASSWORD: "admin"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest-service
+  labels:
+    app: ingest-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingest-service
+  template:
+    metadata:
+      labels:
+        app: ingest-service
+    spec:
+      containers:
+        - name: ingest-service
+          image: files-pipeline-ingest-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: ingest-service-config
+            - secretRef:
+                name: ingest-service-secret
+          env:
+            - name: JAVA_OPTS
+              value: "-Xms128m -Xmx192m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+          resources:
+            requests:
+              memory: "384Mi"
+              cpu: "100m"
+            limits:
+              memory: "384Mi"
+              cpu: "500m"
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            periodSeconds: 15
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingest-service
+spec:
+  type: ClusterIP
+  selector:
+    app: ingest-service
+  ports:
+    - port: 8081
+      targetPort: 8081

@@ -1,18 +1,10 @@
 package com.demo.report.domain
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 @Entity
 @Table(name = "file_summaries")
@@ -20,13 +12,12 @@ import java.util.UUID
 class FileSummary(
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: UUID? = null,
+    val id: UUID = UUID.randomUUID(),
 
-    @Column(name = "file_id", nullable = false, unique = true)
+    @Column(nullable = false, unique = true)
     val fileId: UUID,
 
-    @Column(name = "job_id", nullable = false)
+    @Column(nullable = false)
     val jobId: UUID,
 
     @Column(nullable = false)
@@ -36,26 +27,25 @@ class FileSummary(
     @Enumerated(EnumType.STRING)
     val status: SummaryStatus,
 
-    @Column(name = "total_rows", nullable = false)
+    @Column(nullable = false)
     val totalRows: Int,
 
-    @Column(name = "valid_rows", nullable = false)
+    @Column(nullable = false)
     val validRows: Int,
 
-    @Column(name = "invalid_rows", nullable = false)
+    @Column(nullable = false)
     val invalidRows: Int,
 
-    @Column(name = "summary_data", columnDefinition = "text")
+    @Column(columnDefinition = "text")
     val summaryData: String?,
 
-    @Column(name = "error_message")
     val errorMessage: String?,
 
-    @Column(name = "processed_at", nullable = false)
+    @Column(nullable = false)
     val processedAt: Instant,
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     var createdAt: Instant? = null,
 )
 

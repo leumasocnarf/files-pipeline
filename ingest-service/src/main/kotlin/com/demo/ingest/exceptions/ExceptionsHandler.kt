@@ -50,6 +50,13 @@ class ExceptionsHandler {
         return problem
     }
 
+    @ExceptionHandler(FileNotFoundException::class)
+    fun handleFileNotFound(ex: FileNotFoundException): ProblemDetail {
+        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "File not found")
+        problem.title = "File Not Found"
+        return problem
+    }
+
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
         val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")

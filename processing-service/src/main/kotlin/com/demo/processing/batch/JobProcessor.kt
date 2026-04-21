@@ -4,6 +4,7 @@ import com.demo.processing.events.FileProcessedEvent
 import com.demo.processing.events.FileProcessedEventProducer
 import com.demo.processing.events.FileProcessedPayload
 import com.demo.processing.gateways.IngestServiceGateway
+import com.demo.processing.helpers.ParseResult
 import com.demo.processing.helpers.aggregateData
 import com.demo.processing.helpers.parseFile
 import org.slf4j.LoggerFactory
@@ -15,75 +16,126 @@ import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 
+data class QueuedJob(
+    val id: UUID,
+    val fileId: UUID,
+    val filename: String,
+)
+
+enum class JobStatus { QUEUED, PROCESSING, COMPLETED, FAILED }
+
+fun QueuedJob.toProcessedEvent(
+    status: JobStatus,
+    totalRows: Int,
+    validRows: Int,
+    invalidRows: Int,
+    summaryData: String?,
+    errorMessage: String?,
+    processedAt: Instant,
+) = FileProcessedEvent(
+    eventId = UUID.randomUUID(),
+    eventType = "FILE_PROCESSED",
+    timestamp = processedAt,
+    payload = FileProcessedPayload(
+        fileId = fileId,
+        jobId = id,
+        filename = filename,
+        status = status.name,
+        totalRows = totalRows,
+        validRows = validRows,
+        invalidRows = invalidRows,
+        summaryData = summaryData,
+        errorMessage = errorMessage,
+        processedAt = processedAt,
+    )
+)
+
 @Service
 class JobProcessor(
     private val jdbc: JdbcTemplate,
     private val ingestServiceGateway: IngestServiceGateway,
     private val fileProcessedEventProducer: FileProcessedEventProducer,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Transactional
-    fun processJob(jobId: UUID, fileId: UUID, filename: String) {
+    fun processJob(job: QueuedJob) {
+        val fileBytes = ingestServiceGateway.getFileContent(job.fileId)
 
-        val fileBytes = ingestServiceGateway.getFileContent(fileId)
-        val parsed = parseFile(fileBytes, filename)
-        val aggregation = aggregateData(parsed)
-        val aggregationJson = objectMapper.writeValueAsString(aggregation)
+        when (val parsed = parseFile(fileBytes, job.filename)) {
+            is ParseResult.Empty -> {
+                log.warn("File {} yielded no parseable content — marking as failed", job.fileId)
+                finalizeJob(job, JobStatus.FAILED, errorMessage = "No parseable content")
+            }
 
-        jdbc.update(
-            "UPDATE processing_jobs SET status = 'COMPLETED', completed_at = ?, row_count = ?, valid_rows = ?, invalid_rows = ? WHERE id = ?",
-            Timestamp.from(Instant.now()), parsed.totalRows, parsed.validRows, parsed.invalidRows, jobId
-        )
+            is ParseResult.Success -> {
+                val aggregation = aggregateData(parsed)
+                val aggregationJson = objectMapper.writeValueAsString(aggregation)
 
-        fileProcessedEventProducer.publishEvent(
-            FileProcessedEvent(
-                eventId = UUID.randomUUID(),
-                eventType = "FILE_PROCESSED",
-                timestamp = Instant.now(),
-                payload = FileProcessedPayload(
-                    fileId = fileId,
-                    jobId = jobId,
-                    filename = filename,
-                    status = "COMPLETED",
+                finalizeJob(
+                    job = job,
+                    status = JobStatus.COMPLETED,
                     totalRows = parsed.totalRows,
                     validRows = parsed.validRows,
                     invalidRows = parsed.invalidRows,
                     summaryData = aggregationJson,
-                    errorMessage = null,
-                    processedAt = Instant.now()
                 )
-            )
-        )
 
-        log.info("Processed file {} — {} rows, revenue: {}", fileId, parsed.totalRows, aggregation["totalRevenue"])
+                log.info(
+                    "Processed job {} for file {} — rows: {}",
+                    job.id,
+                    job.fileId,
+                    parsed.totalRows,
+                )
+            }
+        }
     }
 
+    /**
+     * Finalizes a processing job by updating its status in the database and
+     * publishing a [FileProcessedEvent] to Kafka.
+     *
+     * When called internally from [processJob], this joins the existing transaction
+     * since Spring proxies do not intercept self-calls. When called externally
+     * (e.g. from [BatchProcessor] on failure), it runs in its own transaction.
+     */
     @Transactional
-    fun failJob(jobId: UUID, fileId: UUID, filename: String, error: String?) {
+    fun finalizeJob(
+        job: QueuedJob,
+        status: JobStatus,
+        totalRows: Int = 0,
+        validRows: Int = 0,
+        invalidRows: Int = 0,
+        summaryData: String? = null,
+        errorMessage: String? = null,
+    ) {
+        val now = Instant.now()
+
+        // First write
         jdbc.update(
-            "UPDATE processing_jobs SET status = 'FAILED', completed_at = ?, error_message = ? WHERE id = ?",
-            Timestamp.from(Instant.now()), error, jobId
+            """
+            UPDATE processing_jobs
+            SET status = ?, completed_at = ?, row_count = ?, valid_rows = ?, invalid_rows = ?, error_message = ?
+            WHERE id = ?
+            """.trimIndent(),
+            status.name, Timestamp.from(now), totalRows, validRows, invalidRows, errorMessage, job.id,
         )
 
+        // TODO: Dual-write — DB save + Kafka publish are not atomic.
+        //  Potential solution - Replace with outbox pattern: persist the event in the same transaction,
+        //  let a poller/CDC relay it to Kafka.
+
+        // Second write
         fileProcessedEventProducer.publishEvent(
-            FileProcessedEvent(
-                eventId = UUID.randomUUID(),
-                eventType = "FILE_PROCESSED",
-                timestamp = Instant.now(),
-                payload = FileProcessedPayload(
-                    fileId = fileId,
-                    jobId = jobId,
-                    filename = filename,
-                    status = "FAILED",
-                    totalRows = 0,
-                    validRows = 0,
-                    invalidRows = 0,
-                    summaryData = null,
-                    errorMessage = error,
-                    processedAt = Instant.now()
-                )
+            job.toProcessedEvent(
+                status = status,
+                totalRows = totalRows,
+                validRows = validRows,
+                invalidRows = invalidRows,
+                summaryData = summaryData,
+                errorMessage = errorMessage,
+                processedAt = now,
             )
         )
     }

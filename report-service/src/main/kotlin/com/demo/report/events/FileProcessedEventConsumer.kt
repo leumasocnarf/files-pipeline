@@ -1,51 +1,29 @@
 package com.demo.report.events
 
-import com.demo.report.domain.FileSummary
-import com.demo.report.domain.FileSummaryRepository
-import com.demo.report.domain.SummaryStatus
+import com.demo.report.services.SaveFileSummaryUseCase
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 
 @Component
 class FileProcessedEventConsumer(
-    private val fileSummaryRepository: FileSummaryRepository,
+    private val saveFileSummaryUseCase: SaveFileSummaryUseCase,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @KafkaListener(topics = ["file.processed"], groupId = "report-service")
-    @Transactional
     fun handle(event: FileProcessedEvent, ack: Acknowledgment) {
-        val p = event.payload
-        log.info("Received file.processed for file {} with status {}", p.fileId, p.status)
+        log.info("Received file.processed for file {} with status {}", event.payload.fileId, event.payload.status)
 
         try {
-            if (fileSummaryRepository.existsByFileId(p.fileId)) {
-                log.warn("Duplicate event for file {}, skipping", p.fileId)
-                ack.acknowledge()
-                return
-            }
-
-            fileSummaryRepository.save(
-                FileSummary(
-                    fileId = p.fileId,
-                    jobId = p.jobId,
-                    filename = p.filename,
-                    status = SummaryStatus.valueOf(p.status),
-                    totalRows = p.totalRows,
-                    validRows = p.validRows,
-                    invalidRows = p.invalidRows,
-                    summaryData = p.summaryData,
-                    errorMessage = p.errorMessage,
-                    processedAt = p.processedAt
-                )
-            )
+            // Single write
+            saveFileSummaryUseCase.execute(event.payload)
             ack.acknowledge()
-
         } catch (e: Exception) {
-            log.error("Failed to process event for file {}: {}", p.fileId, e.message)
+            log.error("Failed to process event for file {}", event.payload.fileId, e)
+            // Don't ack — let Kafka retry based on your consumer config,
+            // or explicitly send to a dead-letter topic here
         }
     }
 }

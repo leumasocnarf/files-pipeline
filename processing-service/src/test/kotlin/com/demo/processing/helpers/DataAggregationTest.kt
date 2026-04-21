@@ -6,13 +6,16 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
+import java.math.BigDecimal
+import kotlin.test.assertIs
 
-class AggregationTest {
+class DataAggregationTest {
 
     private fun parseAndAggregate(vararg rows: String): Map<String, Any> {
         val headers = "date,product,region,revenue,quantity"
         val csv = (listOf(headers) + rows.toList()).joinToString("\n")
-        return aggregateData(parseCsv(csv.toByteArray()))
+        val result = parseFile(csv.toByteArray(), "data.csv")
+        return aggregateData(assertIs(result))
     }
 
     @Nested
@@ -20,16 +23,16 @@ class AggregationTest {
 
         @ParameterizedTest
         @CsvSource(
-            "100.0, 200.0, 300.0",
-            "0.0, 0.0, 0.0",
-            "999.99, 0.01, 1000.0"
+            "100.0, 200.0, 300.00",
+            "0.0, 0.0, 0.00",
+            "999.99, 0.01, 1000.00"
         )
-        fun `computes total revenue`(rev1: String, rev2: String, expected: Double) {
+        fun `computes total revenue`(rev1: String, rev2: String, expected: String) {
             val result = parseAndAggregate(
                 "2026-01-01,A,North,$rev1,10",
                 "2026-01-02,B,South,$rev2,20"
             )
-            assertEquals(expected, result["totalRevenue"])
+            assertEquals(BigDecimal(expected), result["totalRevenue"])
         }
 
         @ParameterizedTest
@@ -53,10 +56,11 @@ class AggregationTest {
                 "2026-01-02,A,South,200.0,20",
                 "2026-01-03,B,North,50.0,5"
             )
-            val byProduct = result["revenueByProduct"] as Map<*, *>
+            @Suppress("UNCHECKED_CAST")
+            val byProduct = result["revenueByProduct"] as Map<String, BigDecimal>
 
-            assertEquals(300.0, byProduct["A"])
-            assertEquals(50.0, byProduct["B"])
+            assertEquals(BigDecimal("300.00"), byProduct["A"])
+            assertEquals(BigDecimal("50.00"), byProduct["B"])
         }
 
         @Test
@@ -66,10 +70,11 @@ class AggregationTest {
                 "2026-01-02,B,North,200.0,20",
                 "2026-01-03,C,South,50.0,5"
             )
-            val byRegion = result["revenueByRegion"] as Map<*, *>
+            @Suppress("UNCHECKED_CAST")
+            val byRegion = result["revenueByRegion"] as Map<String, BigDecimal>
 
-            assertEquals(300.0, byRegion["North"])
-            assertEquals(50.0, byRegion["South"])
+            assertEquals(BigDecimal("300.00"), byRegion["North"])
+            assertEquals(BigDecimal("50.00"), byRegion["South"])
         }
     }
 
@@ -155,7 +160,7 @@ class AggregationTest {
                 "2026-01-01,A,North,$badRevenue,10",
                 "2026-01-02,B,South,200.0,20"
             )
-            assertEquals(200.0, result["totalRevenue"])
+            assertEquals(BigDecimal("200.00"), result["totalRevenue"])
         }
     }
 }

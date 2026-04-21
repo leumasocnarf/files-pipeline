@@ -21,13 +21,6 @@ class ExceptionsHandler {
         return problem
     }
 
-    @ExceptionHandler(AuthenticationException::class)
-    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
-        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
-        problem.title = "Authentication Error"
-        return problem
-    }
-
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException): ProblemDetail {
         val problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.message ?: "Bad request")
@@ -44,6 +37,21 @@ class ExceptionsHandler {
         log.error("Unexpected error: {}", ex.message, ex)
         val problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error")
         problem.title = "Server Error"
+        return problem
+    }
+
+    @ExceptionHandler(SummaryNotFoundException::class)
+    fun handleNotFound(ex: SummaryNotFoundException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.message.orEmpty()).apply {
+            title = "Summary Not Found"
+            setProperty("fileId", ex.fileId)
+        }
+    }
+
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthentication(ex: AuthenticationException): ProblemDetail {
+        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid or missing authentication")
+        problem.title = "Authentication Error"
         return problem
     }
 }

@@ -1,61 +1,52 @@
 package com.demo.ingest.controllers
 
-import com.demo.ingest.domain.IngestedFileStatus
-import com.demo.ingest.services.FileUploadService
+import com.demo.ingest.services.IngestFileService
+import com.demo.ingest.services.UploadResult
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.util.UUID
+import java.util.*
 
 data class UploadResponse(
     val id: UUID,
     val filename: String,
-    val status: String,
+    val contentType: String,
+    val fileSize: Long,
     val rowCount: Int,
-    val headers: List<String>,
+    val headers: List<String>
+)
+
+fun UploadResult.toResponse() = UploadResponse(
+    id = file.id,
+    filename = file.filename,
+    contentType = file.contentType,
+    fileSize = file.fileSize,
+    rowCount = rowCount,
+    headers = headers
 )
 
 @RestController
 @RequestMapping("/api/v1/uploads")
-class IngestController(
-    private val uploadService: FileUploadService,
-) {
+class IngestController(private val uploadService: IngestFileService) {
 
     @PreAuthorize("hasRole('ingest:write')")
     @PostMapping
-    fun upload(@RequestParam("file") file: MultipartFile): ResponseEntity<UploadResponse> {
-        val (fileUpload, validation) = uploadService.upload(file)
-
-        return ResponseEntity.ok(
-            UploadResponse(
-                id = fileUpload.id!!,
-                filename = fileUpload.filename,
-                status = IngestedFileStatus.PUBLISHED.name,
-                rowCount = validation.rowCount,
-                headers = validation.headers
-            )
-        )
-    }
+    fun upload(@RequestParam("file") file: MultipartFile): ResponseEntity<UploadResponse> =
+        ResponseEntity.status(HttpStatus.CREATED)
+            .body(uploadService.upload(file).toResponse())
 
     @PreAuthorize("hasRole('ingest:read')")
     @GetMapping("/{id}/data")
     fun downloadFile(@PathVariable id: UUID): ResponseEntity<ByteArray> {
-        val fileUpload = uploadService.getFile(id)
+        val file = uploadService.getFile(id)
 
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(fileUpload.contentType))
-            .header(
-                HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename=\"${fileUpload.filename}\""
-            )
-            .body(fileUpload.fileData)
+            .contentType(MediaType.parseMediaType(file.contentType))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${file.filename}\"")
+            .body(file.fileData)
     }
 }

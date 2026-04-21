@@ -12,4 +12,3 @@ out/
 
 # Environment Variables
 .env
-kafka.env

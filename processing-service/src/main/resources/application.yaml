@@ -41,6 +41,10 @@ spring:
           keycloak:
             token-uri: ${OAUTH2_TOKEN_URI}
 
+  mvc:
+    servlet:
+      load-on-startup: 1
+
 services:
   ingest:
     base-url: ${INGEST_BASE_URL}
@@ -49,6 +53,17 @@ processing:
   batch:
     interval-ms: 30000
     max-size: 50
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
 
 logging:
   level:

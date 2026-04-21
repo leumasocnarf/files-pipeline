@@ -1,17 +1,14 @@
 package com.demo.processing.events
 
+import com.demo.processing.services.CreateProcessingJobUseCase
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
-import org.springframework.dao.DataIntegrityViolationException
-import org.springframework.dao.DuplicateKeyException
-import org.springframework.jdbc.core.JdbcTemplate
+import org.mockito.kotlin.whenever
 import org.springframework.kafka.support.Acknowledgment
-import java.sql.Timestamp
 import java.time.Instant
 import java.util.*
 
@@ -19,7 +16,7 @@ import java.util.*
 class FileUploadedEventConsumerTest {
 
     @Mock
-    lateinit var jdbc: JdbcTemplate
+    lateinit var createProcessingJobUseCase: CreateProcessingJobUseCase
 
     @Mock
     lateinit var ack: Acknowledgment
@@ -28,7 +25,7 @@ class FileUploadedEventConsumerTest {
     lateinit var consumer: FileUploadedEventConsumer
 
     @Test
-    fun `should insert job and acknowledge on valid event`() {
+    fun `should execute use case and acknowledge on valid event`() {
         val event = FileUploadedEvent(
             eventId = UUID.randomUUID(),
             eventType = "FILE_UPLOADED",
@@ -43,26 +40,27 @@ class FileUploadedEventConsumerTest {
 
         consumer.handle(event, ack)
 
-        verify(jdbc).update(any(), any(), any(), any(), any())
+        verify(createProcessingJobUseCase).execute(event.payload)
         verify(ack).acknowledge()
     }
 
     @Test
-    fun `should not acknowledge on database failure`() {
+    fun `should not acknowledge on use case failure`() {
+        val payload = FileUploadedPayload(
+            fileId = UUID.randomUUID(),
+            filename = "test.csv",
+            contentType = "text/csv",
+            fileSize = 1024L
+        )
         val event = FileUploadedEvent(
             eventId = UUID.randomUUID(),
             eventType = "FILE_UPLOADED",
             timestamp = Instant.now(),
-            payload = FileUploadedPayload(
-                fileId = UUID.randomUUID(),
-                filename = "test.csv",
-                contentType = "text/csv",
-                fileSize = 1024L
-            )
+            payload = payload
         )
 
-        `when`(jdbc.update(any(), any(), any(), any(), any()))
-            .thenThrow(DataIntegrityViolationException("db error"))
+        doThrow(RuntimeException("processing failed"))
+            .whenever(createProcessingJobUseCase).execute(payload)
 
         consumer.handle(event, ack)
 
@@ -70,53 +68,24 @@ class FileUploadedEventConsumerTest {
     }
 
     @Test
-    fun `should acknowledge duplicate events`() {
-        val event = FileUploadedEvent(
-            eventId = UUID.randomUUID(),
-            eventType = "FILE_UPLOADED",
-            timestamp = Instant.now(),
-            payload = FileUploadedPayload(
-                fileId = UUID.randomUUID(),
-                filename = "test.csv",
-                contentType = "text/csv",
-                fileSize = 1024L
-            )
-        )
-
-        `when`(jdbc.update(any(), any(), any(), any(), any()))
-            .thenThrow(DuplicateKeyException::class.java)
-
-        consumer.handle(event, ack)
-
-        verify(ack).acknowledge()
-    }
-
-    @Test
-    fun `should pass correct sql arguments`() {
+    fun `should pass correct payload to use case`() {
         val fileId = UUID.randomUUID()
+        val payload = FileUploadedPayload(
+            fileId = fileId,
+            filename = "test.csv",
+            contentType = "text/csv",
+            fileSize = 1024L
+        )
         val event = FileUploadedEvent(
             eventId = UUID.randomUUID(),
             eventType = "FILE_UPLOADED",
             timestamp = Instant.now(),
-            payload = FileUploadedPayload(
-                fileId = fileId,
-                filename = "test.csv",
-                contentType = "text/csv",
-                fileSize = 1024L
-            )
+            payload = payload
         )
-
-        `when`(jdbc.update(any(), any(), any(), any(), any()))
-            .thenReturn(1)
 
         consumer.handle(event, ack)
 
-        verify(jdbc).update(
-            eq("INSERT INTO processing_jobs (id, file_id, filename, status, created_at) VALUES (?, ?, ?, 'QUEUED', ?)"),
-            any(UUID::class.java),
-            eq(fileId),
-            eq("test.csv"),
-            any(Timestamp::class.java)
-        )
+        verify(createProcessingJobUseCase).execute(payload)
+        verify(ack).acknowledge()
     }
 }
