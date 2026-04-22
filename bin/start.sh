@@ -36,6 +36,12 @@ if ! kind get clusters 2>/dev/null | grep -q "^microservices$"; then
   exit 1
 fi
 
+if [ ! -f k8s/secrets.yaml ]; then
+  fail "k8s/secrets.yaml not found."
+  info "Run: cp secrets.yaml.example k8s/secrets.yaml and fill in the values."
+  exit 1
+fi
+
 if ! docker ps --format '{{.Names}}' | grep -q "postgres"; then
   step "Starting Docker Compose infrastructure..."
   docker compose up -d postgres kafka schema-registry keycloak redis
@@ -47,6 +53,9 @@ fi
 done_ "Cluster and infrastructure detected"
 
 header "2/3" "Deploying services (staggered)"
+
+step "Applying secrets..."
+kubectl apply -f k8s/secrets.yaml
 
 step "Deploying ingest-service..."
 kubectl apply -f k8s/ingest-service.yaml

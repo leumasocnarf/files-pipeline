@@ -5,20 +5,9 @@ metadata:
 data:
   SERVER_PORT: "8083"
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/report_service"
-  SPRING_DATASOURCE_USERNAME: "admin"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
   JWT_RESOURCE_ID: "report-service"
   JWT_PRINCIPAL_ATTRIBUTE: "preferred_username"
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: report-service-secret
-type: Opaque
-stringData:
-  SPRING_DATASOURCE_PASSWORD: "admin"
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -74,7 +63,6 @@ spec:
               path: /actuator/health/liveness
               port: 8083
             periodSeconds: 15
-
 ---
 apiVersion: v1
 kind: Service

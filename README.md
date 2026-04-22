@@ -187,11 +187,12 @@ git clone https://github.com/your-username/file-pipeline.git
 cd file-pipeline
 ```
 
-2. Copy the environment files:
+2. Copy the environment files and edit them with your values:
 
 ```bash
 cp .env.example .env
 cp kafka.env.example kafka.env
+cp secrets.yaml.example k8s/secrets.yaml
 ```
 
 3. Build images, start infrastructure, and create the Kind cluster:
