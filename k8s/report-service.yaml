@@ -63,7 +63,6 @@ spec:
               path: /actuator/health/liveness
               port: 8083
             periodSeconds: 15
-
 ---
 apiVersion: v1
 kind: Service
